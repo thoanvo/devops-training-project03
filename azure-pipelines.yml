@@ -1,12 +1,16 @@
 name: Azure Pipelines
 variables:
   python.version: '3.7.6'
+
+  # Agent VM image name
+  vmImageName: 'ubuntu-latest'
+
 stages:
 - stage: Build
   jobs:
   - job: Build
     pool:
-      name: Hosted Ubuntu 1604
+      vmImage: $(vmImageName)
     steps:
     - task: CmdLine@2
       displayName: Install Newman
