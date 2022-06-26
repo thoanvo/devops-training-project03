@@ -1,0 +1,239 @@
+name: Azure Pipelines
+trigger:
+- main
+variables:
+  python.version: '3.7.6'
+  TF_VAR_ARM_SUBSCRIPTION_ID: $(subscription_id)
+  TF_VAR_ARM_CLIENT_ID: $(client_id)
+  TF_VAR_ARM_CLIENT_SECRET: $(client_secret)
+  TF_VAR_ARM_TENANT_ID: $(tenant_id)
+  TF_VAR_ADMIN_USERANME: $(admin_username)
+  TF_VAR_ADMIN_PASSWORD: $(admin_password)
+  TF_VAR_PUBLIC_KEY: $(public_key)
+  RUN_TERRAFORM_TASK: $(run_terraform_task)
+  RUN_DEPLOY_TASK: $(run_deploy_task)
+stages:
+- stage: Build
+  jobs:
+  - job: Build
+    pool:
+      name: Hosted Ubuntu 1604
+    steps:
+    # Needed for Terraform VM deployment
+    - task: InstallSSHKey@0
+      displayName: 'Install SSH Key'
+      inputs:
+        knownHostsEntry: '20.92.90.106'
+        sshPublicKey: '$(public_key)'
+        sshKeySecureFile: 'id_rsa'
+    - task: ArchiveFiles@2
+      displayName: 'Archive FakeRestAPI'
+      inputs:
+        rootFolderOrFile: '$(System.DefaultWorkingDirectory)/automatedtesting/jmeter/fakerestapi'
+        includeRootFolder: false
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)-fakerestapi.zip'
+    - publish: $(Build.ArtifactStagingDirectory)/$(Build.BuildId)-fakerestapi.zip
+      displayName: 'Upload Rest API'
+      artifact: drop-fakerestapi
+    
+    - task: ArchiveFiles@2
+      displayName: 'Archive Selenium Script'
+      inputs:
+        rootFolderOrFile: $(System.DefaultWorkingDirectory)/automatedtesting/selenium
+        includeRootFolder: false
+        archiveType: tar 
+        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)-selenium-test.tar'
+    - publish: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)-selenium-test.tar'
+      displayName: 'Upload Selenium Test Package'
+      artifact: upload-selenium-test
+
+    - task: TerraformTaskV1@0
+      displayName: 'Terraform Init'
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        backendServiceArm: 'udacity-thoanvtt-project03-terraform'
+        backendAzureRmResourceGroupName: 'udacity-thoanvtt-project03-rg'
+        backendAzureRmStorageAccountName: 'thoanvttstorage01999'
+        backendAzureRmContainerName: 'thoanvttcontainer01999'
+        backendAzureRmKey: '$(TF_VAR_STORAGE_ACCESS_KEY)'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
+
+    - task: TerraformTaskV1@0
+      displayName: "Terraform Plan"
+      inputs:
+        provider: 'azurerm'
+        command: 'plan'
+        environmentServiceNameAzureRM: 'udacity-thoanvtt-project03-terraform'
+        backendAzureRmResourceGroupName: 'udacity-thoanvtt-project03-rg'
+        backendAzureRmStorageAccountName: 'thoanvttstorage01999'
+        backendAzureRmContainerName: 'thoanvttcontainer01999'
+        backendAzureRmKey: '$(TF_VAR_STORAGE_ACCESS_KEY)'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
+        commandOptions: |
+          -input=false -var "subscription_id=$(TF_VAR_ARM_SUBSCRIPTION_ID)" -var "client_id=$(TF_VAR_ARM_CLIENT_ID)" -var "client_secret=$(TF_VAR_ARM_CLIENT_SECRET)" -var "tenant_id=$(TF_VAR_ARM_TENANT_ID)" -var "admin_username=$(TF_VAR_ADMIN_USERANME)" -var "admin_password=$(TF_VAR_ADMIN_PASSWORD)" -var "public_key=$(TF_VAR_PUBLIC_KEY)"
+    - task: CmdLine@2
+      displayName: Install NewMan
+      continueOnError: false
+      inputs:
+        script: 'npm install newman'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/automatedtesting/postman'
+
+    - task: CmdLine@2
+      displayName: "Running PostMan Test"
+      continueOnError: true
+      inputs:
+        script: 'newman run StarterAPIs.json --reporters cli,junit --reporter-junit-export $(System.DefaultWorkingDirectory)/automatedtesting/postman/results/junitReport_$(Build.BuildId).xml'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/automatedtesting/postman'
+    - task: PublishTestResults@2
+      displayName: "Publishing Postman Test Results"
+      inputs:
+        testResultsFormat: 'JUnit'
+        testResultsFiles: '$(System.DefaultWorkingDirectory)/automatedtesting/postman/results/junitReport_*.xml'
+        failTaskOnFailedTests: false
+
+
+- stage: Provision_Terraform_Resources
+  jobs:
+  - job: Provision_Terraform_Resources
+    pool: Hosted Ubuntu 1604
+    steps:
+    - task: TerraformTaskV1@0
+      displayName: 'Terraform Init'
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        commandOptions: '-input=false -var "subscription_id=$(TF_VAR_ARM_SUBSCRIPTION_ID)" -var "client_id=$(TF_VAR_ARM_CLIENT_ID)" -var "client_secret=$(TF_VAR_ARM_CLIENT_SECRET)" -var "tenant_id=$(TF_VAR_ARM_TENANT_ID)" -var "admin_username=$(TF_VAR_ADMIN_USERANME)" -var "admin_password=$(TF_VAR_ADMIN_PASSWORD)" -var "public_key=$(TF_VAR_PUBLIC_KEY)"'
+        backendServiceArm: 'udacity-thoanvtt-project03-terraform'
+        backendAzureRmResourceGroupName: 'udacity-thoanvtt-project03-rg'
+        backendAzureRmStorageAccountName: 'thoanvttstorage01999'
+        backendAzureRmContainerName: 'thoanvttcontainer01999'
+        backendAzureRmKey: '$(TF_VAR_STORAGE_ACCESS_KEY)'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
+    - task: TerraformTaskV1@0
+      displayName: 'Terraform Apply'
+      inputs:
+        provider: 'azurerm'
+        command: 'apply'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
+        commandOptions: '-input=false -var "subscription_id=$(TF_VAR_ARM_SUBSCRIPTION_ID)" -var "client_id=$(TF_VAR_ARM_CLIENT_ID)" -var "client_secret=$(TF_VAR_ARM_CLIENT_SECRET)" -var "tenant_id=$(TF_VAR_ARM_TENANT_ID)" -var "admin_username=$(TF_VAR_ADMIN_USERANME)" -var "admin_password=$(TF_VAR_ADMIN_PASSWORD)" -var "public_key=$(TF_VAR_PUBLIC_KEY)"'''
+        environmentServiceNameAzureRM: 'udacity-thoanvtt-project03-terraform'
+        
+- stage: Deploy
+  jobs:
+    - deployment: FakeRestAPI
+      pool:
+        name: Hosted Ubuntu 1604
+      environment: 'test'
+      strategy:
+       runOnce:
+         deploy:
+           steps:
+             - task: AzureWebApp@1
+               inputs:
+                 azureSubscription: 'az-webapp-service-connection'
+                 appType: 'webApp'
+                 appName: 'udacity-thoanvtt-project03-app-AppService'
+                 package: '$(Pipeline.Workspace)/drop-fakerestapi/$(Build.BuildId)-fakerestapi.zip'
+                 deploymentMethod: 'auto'
+
+  
+    - deployment: VM_Deployment_for_Selenium
+      displayName: 'VM Deployment for Selenium'
+      environment:
+       name: 'test'
+       resourceType: VirtualMachine
+       tags: web
+      strategy:
+       runOnce:
+         deploy:
+           steps:
+            - task: Bash@3
+              inputs:
+                targetType: 'inline'
+
+                script: |
+                  #! /bin/bash
+                  sudo apt-get upgrade -y
+                  sudo apt-get update -y
+                  sudo apt-get install python3-pip -y
+                  sudo apt-get install unzip -y
+                  sudo apt-get install -y chromium-browser
+                  sudo apt-get install -y chromium-driver
+                  pip install --upgrade pip
+                  pip3 install selenium
+                  export PATH=$PATH:/usr/bin/chromedriver
+                  cp $(Pipeline.Workspace)/upload-selenium-test/$(Build.BuildId)-selenium-test.tar ~/selenium
+                  tar -xvf ~/selenium/$(Build.BuildId)-selenium-test.tar
+                  python3 ~/selenium/website_test.py True
+- stage: Load_Test
+  condition: always()
+  jobs:
+    - job: Run_Load_Test
+      steps:
+      - task: JMeterInstaller@0
+        displayName: 'Install JMeter'
+        inputs:
+          jmeterVersion: '5.4.1'
+      - task: UsePythonVersion@0
+        displayName: 'Add Python To Stage'
+        inputs:
+          versionSpec: '3.7'
+          addToPath: true
+          architecture: 'x64'
+      - task: TaurusInstaller@0
+        displayName: 'Install Taurus Installer'
+        inputs:
+          taurusVersion: '1.14.1'
+          pythonCommand: 'python3'
+
+      - task: TaurusRunner@0
+        displayName: 'Running Stress Test on API'
+        inputs:
+            taurusConfig: |
+              execution:
+              - scenario:
+                  script: $(System.DefaultWorkingDirectory)/automatedtesting/jmeter/Starter.jmx
+              reporting:
+              - module: junit-xml
+                filename: taurus-output/Stress-Test-Results-$(Build.BuildId).xml
+            jmeterHome: '$(JMeterInstaller.JMeterHome)'
+            jmeterPath: '$(JMeterInstaller.JMeterPath)'
+            jmeterVersion: '$(JMeterInstaller.JMeterVersion)'
+            outputDir: 'taurus-output'
+            taurusArguments: -o modules.jmeter.properties.numThreads=10
+            reportName: Stress-Test-Report
+
+      - task: PublishTestResults@2
+        displayName: 'Publishing JMeter Stress Test Results'
+        inputs:
+          testResultsFormat: 'JUnit'
+          testResultsFiles: '$(System.DefaultWorkingDirectory)/taurus-output/Stress-Test-Results-$(Build.BuildId).xml'
+          testRunTitle: 'Publishing JMeter Load Test'
+          failTaskOnFailedTests: false
+      
+      - task: TaurusRunner@0
+        displayName: 'Running Endurance Test on API'
+        inputs:
+            taurusConfig: |
+                execution:
+                - scenario:
+                    script: $(System.DefaultWorkingDirectory)/automatedtesting/jmeter/Starter.jmx
+                reporting:
+                - module: junit-xml
+                  filename: taurus-output-endurance/Endurance-Test-Results-$(Build.BuildId).xml
+            jmeterHome: '$(JMeterInstaller.JMeterHome)'
+            jmeterPath: '$(JMeterInstaller.JMeterPath)'
+            jmeterVersion: '$(JMeterInstaller.JMeterVersion)'
+            outputDir: 'taurus-output-endurance'
+            taurusArguments: -o modules.jmeter.properties.numThreads=10 -o modules.jmeter.properties.timeInSeconds=20
+            reportName: Endurance-Test-Report
+
+      - task: PublishTestResults@2
+        displayName: 'Publishing JMeter Endurance Test Results'
+        inputs:
+          testResultsFormat: 'JUnit'
+          testResultsFiles: '$(System.DefaultWorkingDirectory)/taurus-output-endurance/Endurance-Test-Results-$(Build.BuildId).xml'
+          testRunTitle: 'Publishing JMeter Endurance Test'
+          failTaskOnFailedTests: false
