@@ -1,239 +1,269 @@
 name: Azure Pipelines
-trigger:
-- main
 variables:
-  python.version: '3.7.6'
-  TF_VAR_ARM_SUBSCRIPTION_ID: $(subscription_id)
-  TF_VAR_ARM_CLIENT_ID: $(client_id)
-  TF_VAR_ARM_CLIENT_SECRET: $(client_secret)
-  TF_VAR_ARM_TENANT_ID: $(tenant_id)
-  TF_VAR_ADMIN_USERANME: $(admin_username)
-  TF_VAR_ADMIN_PASSWORD: $(admin_password)
-  TF_VAR_PUBLIC_KEY: $(public_key)
-  RUN_TERRAFORM_TASK: $(run_terraform_task)
-  RUN_DEPLOY_TASK: $(run_deploy_task)
+  - group: ssh-config
 stages:
-- stage: Build
-  jobs:
-  - job: Build
-    pool:
-      name: Hosted Ubuntu 1604
-    steps:
-    # Needed for Terraform VM deployment
-    - task: InstallSSHKey@0
-      displayName: 'Install SSH Key'
-      inputs:
-        knownHostsEntry: '20.92.90.106'
-        sshPublicKey: '$(public_key)'
-        sshKeySecureFile: 'id_rsa'
-    - task: ArchiveFiles@2
-      displayName: 'Archive FakeRestAPI'
-      inputs:
-        rootFolderOrFile: '$(System.DefaultWorkingDirectory)/automatedtesting/jmeter/fakerestapi'
-        includeRootFolder: false
-        archiveType: 'zip'
-        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)-fakerestapi.zip'
-    - publish: $(Build.ArtifactStagingDirectory)/$(Build.BuildId)-fakerestapi.zip
-      displayName: 'Upload Rest API'
-      artifact: drop-fakerestapi
-    
-    - task: ArchiveFiles@2
-      displayName: 'Archive Selenium Script'
-      inputs:
-        rootFolderOrFile: $(System.DefaultWorkingDirectory)/automatedtesting/selenium
-        includeRootFolder: false
-        archiveType: tar 
-        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)-selenium-test.tar'
-    - publish: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)-selenium-test.tar'
-      displayName: 'Upload Selenium Test Package'
-      artifact: upload-selenium-test
+  - stage: Infrastructure
+    displayName: Azure Resources Create with terraform
+    jobs:
+    - job: TerraformTasks
+      displayName: Terraform
+      pool:
+        vmImage: 'ubuntu-18.04'
+      steps:
+      - task: DownloadSecureFile@1
+        name: terraform
+        displayName: Download terraform.tfvars
+        inputs:
+          secureFile: 'terraform.tfvars'
 
-    - task: TerraformTaskV1@0
-      displayName: 'Terraform Init'
-      inputs:
-        provider: 'azurerm'
-        command: 'init'
-        backendServiceArm: 'udacity-thoanvtt-project03-terraform'
-        backendAzureRmResourceGroupName: 'udacity-thoanvtt-project03-rg'
-        backendAzureRmStorageAccountName: 'thoanvttstorage01999'
-        backendAzureRmContainerName: 'thoanvttcontainer01999'
-        backendAzureRmKey: '$(TF_VAR_STORAGE_ACCESS_KEY)'
-        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
+      - task: TerraformInstaller@0
+        displayName: Install Terraform
+        inputs:
+          terraformVersion: 'latest'
 
-    - task: TerraformTaskV1@0
-      displayName: "Terraform Plan"
-      inputs:
-        provider: 'azurerm'
-        command: 'plan'
-        environmentServiceNameAzureRM: 'udacity-thoanvtt-project03-terraform'
-        backendAzureRmResourceGroupName: 'udacity-thoanvtt-project03-rg'
-        backendAzureRmStorageAccountName: 'thoanvttstorage01999'
-        backendAzureRmContainerName: 'thoanvttcontainer01999'
-        backendAzureRmKey: '$(TF_VAR_STORAGE_ACCESS_KEY)'
-        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
-        commandOptions: |
-          -input=false -var "subscription_id=$(TF_VAR_ARM_SUBSCRIPTION_ID)" -var "client_id=$(TF_VAR_ARM_CLIENT_ID)" -var "client_secret=$(TF_VAR_ARM_CLIENT_SECRET)" -var "tenant_id=$(TF_VAR_ARM_TENANT_ID)" -var "admin_username=$(TF_VAR_ADMIN_USERANME)" -var "admin_password=$(TF_VAR_ADMIN_PASSWORD)" -var "public_key=$(TF_VAR_PUBLIC_KEY)"
-    - task: CmdLine@2
-      displayName: Install NewMan
-      continueOnError: false
-      inputs:
-        script: 'npm install newman'
-        workingDirectory: '$(System.DefaultWorkingDirectory)/automatedtesting/postman'
+      - task: Bash@3
+        displayName: Copy terraform.tfvars
+        inputs:
+          targetType: 'inline'
+          script: cp $(Agent.TempDirectory)/terraform.tfvars $(System.DefaultWorkingDirectory)/terraform
 
-    - task: CmdLine@2
-      displayName: "Running PostMan Test"
-      continueOnError: true
-      inputs:
-        script: 'newman run StarterAPIs.json --reporters cli,junit --reporter-junit-export $(System.DefaultWorkingDirectory)/automatedtesting/postman/results/junitReport_$(Build.BuildId).xml'
-        workingDirectory: '$(System.DefaultWorkingDirectory)/automatedtesting/postman'
-    - task: PublishTestResults@2
-      displayName: "Publishing Postman Test Results"
-      inputs:
-        testResultsFormat: 'JUnit'
-        testResultsFiles: '$(System.DefaultWorkingDirectory)/automatedtesting/postman/results/junitReport_*.xml'
-        failTaskOnFailedTests: false
+      # Needed for Terraform VM deployment
+      - task: InstallSSHKey@0
+        displayName: Key for SSH to VM
+        inputs:
+          knownHostsEntry: '$(knownHostsEntry)'
+          sshPublicKey: '$(sshPublicKey)'
+          sshKeySecureFile: 'id_rsa'
+
+      - task: TerraformTaskV2@2
+        displayName: Terraform Init
+        inputs:
+          provider: 'azurerm'
+          command: 'init'
+          backendServiceArm: 'azure-service-connection'
+          backendAzureRmResourceGroupName: 'thoanvtt-test-01999-rg'
+          backendAzureRmStorageAccountName: '$(StorageAccountName)'
+          backendAzureRmContainerName: 'thoanvttcontainer01999'
+          backendAzureRmKey: 'terraform.tfstate'
+          workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
+
+      - task: TerraformTaskV2@2
+        displayName: Terraform Validate
+        inputs:
+          provider: 'azurerm'
+          command: 'validate'
+          workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
+          backendServiceArm: 'azure-service-connection'
+      - task: TerraformTaskV2@2
+        displayName: Terraform Plan
+        inputs:
+          provider: 'azurerm'
+          command: 'plan'
+          workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
+          environmentServiceNameAzureRM: 'azure-service-connection'
+      - task: TerraformTaskV2@2
+        displayName: Terraform Apply
+        inputs:
+          provider: 'azurerm'
+          command: 'apply'
+          commandOptions: |
+            -auto-approve
+          workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
+          environmentServiceNameAzureRM: 'azure-service-connection'
 
 
-- stage: Provision_Terraform_Resources
-  jobs:
-  - job: Provision_Terraform_Resources
-    pool: Hosted Ubuntu 1604
-    steps:
-    - task: TerraformTaskV1@0
-      displayName: 'Terraform Init'
-      inputs:
-        provider: 'azurerm'
-        command: 'init'
-        commandOptions: '-input=false -var "subscription_id=$(TF_VAR_ARM_SUBSCRIPTION_ID)" -var "client_id=$(TF_VAR_ARM_CLIENT_ID)" -var "client_secret=$(TF_VAR_ARM_CLIENT_SECRET)" -var "tenant_id=$(TF_VAR_ARM_TENANT_ID)" -var "admin_username=$(TF_VAR_ADMIN_USERANME)" -var "admin_password=$(TF_VAR_ADMIN_PASSWORD)" -var "public_key=$(TF_VAR_PUBLIC_KEY)"'
-        backendServiceArm: 'udacity-thoanvtt-project03-terraform'
-        backendAzureRmResourceGroupName: 'udacity-thoanvtt-project03-rg'
-        backendAzureRmStorageAccountName: 'thoanvttstorage01999'
-        backendAzureRmContainerName: 'thoanvttcontainer01999'
-        backendAzureRmKey: '$(TF_VAR_STORAGE_ACCESS_KEY)'
-        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
-    - task: TerraformTaskV1@0
-      displayName: 'Terraform Apply'
-      inputs:
-        provider: 'azurerm'
-        command: 'apply'
-        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
-        commandOptions: '-input=false -var "subscription_id=$(TF_VAR_ARM_SUBSCRIPTION_ID)" -var "client_id=$(TF_VAR_ARM_CLIENT_ID)" -var "client_secret=$(TF_VAR_ARM_CLIENT_SECRET)" -var "tenant_id=$(TF_VAR_ARM_TENANT_ID)" -var "admin_username=$(TF_VAR_ADMIN_USERANME)" -var "admin_password=$(TF_VAR_ADMIN_PASSWORD)" -var "public_key=$(TF_VAR_PUBLIC_KEY)"'''
-        environmentServiceNameAzureRM: 'udacity-thoanvtt-project03-terraform'
+  - stage: Build
+    jobs:
+    - job: Build
+      pool:
+         vmImage: 'ubuntu-18.04'
+      steps:
+      - task: ArchiveFiles@2
+        displayName: Archive FakeRestAPI
+        inputs:
+          rootFolderOrFile: '$(System.DefaultWorkingDirectory)/fakerestapi'
+          includeRootFolder: false
+          archiveType: 'zip'
+          archiveFile: '$(Build.BuildId)-fakerestapi.zip'
+      - task: PublishPipelineArtifact@1
+        displayName: Upload package
+        inputs:   
+          targetPath: $(Build.BuildId)-fakerestapi.zip
+          artifact: drop-fakerestapi
+
+      - task: ArchiveFiles@2
+        displayName: Archive Selenium
+        inputs:
+          rootFolderOrFile: '$(System.DefaultWorkingDirectory)/automatedtesting/selenium'
+          includeRootFolder: false
+          archiveType: 'zip'
+          archiveFile: '$(Build.BuildId)-selenium.zip'
+          replaceExistingArchive: true
         
-- stage: Deploy
-  jobs:
+      - task: PublishPipelineArtifact@1
+        displayName: Upload Selenium
+        inputs:
+         targetPath: $(Build.BuildId)-selenium.zip
+         artifact: drop-selenium
+  - stage: DeployApp
+    displayName: Deploy App
+    jobs:
     - deployment: FakeRestAPI
       pool:
-        name: Hosted Ubuntu 1604
-      environment: 'test'
+        vmImage: 'Ubuntu-18.04'
+      environment: 'TEST'
       strategy:
-       runOnce:
-         deploy:
-           steps:
-             - task: AzureWebApp@1
-               inputs:
-                 azureSubscription: 'az-webapp-service-connection'
-                 appType: 'webApp'
-                 appName: 'udacity-thoanvtt-project03-app-AppService'
-                 package: '$(Pipeline.Workspace)/drop-fakerestapi/$(Build.BuildId)-fakerestapi.zip'
-                 deploymentMethod: 'auto'
+        runOnce:
+          deploy:
+            steps:
+            - task: AzureWebApp@1
+              displayName: 'Deploy Azure Web App'
+              inputs:
+                azureSubscription: 'azure-service-connection'
+                appName: 'App-project3'
+                appType: webApp
+                package: $(Pipeline.Workspace)/drop-fakerestapi/$(Build.BuildId)-fakerestapi.zip
+                deploymentMethod: auto          
 
-  
-    - deployment: VM_Deployment_for_Selenium
-      displayName: 'VM Deployment for Selenium'
+    - deployment: VMDeploy
+      displayName: VMDeploy
       environment:
-       name: 'test'
-       resourceType: VirtualMachine
-       tags: web
+        name:  'TEST'
+        resourceType: VirtualMachine
       strategy:
-       runOnce:
-         deploy:
-           steps:
+        runOnce:
+          deploy:
+            steps:
             - task: Bash@3
               inputs:
                 targetType: 'inline'
-
                 script: |
-                  #! /bin/bash
-                  sudo apt-get upgrade -y
+                  #!/bin/bash
                   sudo apt-get update -y
+                  sudo apt-get upgrade -y
                   sudo apt-get install python3-pip -y
                   sudo apt-get install unzip -y
                   sudo apt-get install -y chromium-browser
-                  sudo apt-get install -y chromium-driver
-                  pip install --upgrade pip
+                  sudo apt-get install -y chromium-chromedriver
+                  python3 -m pip install --upgrade pip
                   pip3 install selenium
-                  export PATH=$PATH:/usr/bin/chromedriver
-                  cp $(Pipeline.Workspace)/upload-selenium-test/$(Build.BuildId)-selenium-test.tar ~/selenium
-                  tar -xvf ~/selenium/$(Build.BuildId)-selenium-test.tar
-                  python3 ~/selenium/website_test.py True
-- stage: Load_Test
-  condition: always()
-  jobs:
-    - job: Run_Load_Test
-      steps:
-      - task: JMeterInstaller@0
-        displayName: 'Install JMeter'
-        inputs:
-          jmeterVersion: '5.4.1'
-      - task: UsePythonVersion@0
-        displayName: 'Add Python To Stage'
-        inputs:
-          versionSpec: '3.7'
-          addToPath: true
-          architecture: 'x64'
-      - task: TaurusInstaller@0
-        displayName: 'Install Taurus Installer'
-        inputs:
-          taurusVersion: '1.14.1'
-          pythonCommand: 'python3'
+                  python3 -V
+                  pip3 -V
+                  export PATH=$PATH:/usr/local/bin
+                  chromium-browser -version
+                  chromedriver --version
+                  # agent log analytics
+              env:  # To use secret variables in a script, we must explicitly map them as environment variables.
+                AZURE_LOG_ANALYTICS_ID: $(AZURE_LOG_ANALYTICS_ID)
+                AZURE_LOG_ANALYTICS_PRIMARY_KEY: $(AZURE_LOG_ANALYTICS_PRIMARY_KEY)
+              displayName: Configure VM   
+  - stage: Test
+    jobs:
+      - deployment: test_on_vm
+        displayName: UI testing
+        environment:
+         name: 'TEST'
+         resourceType: VirtualMachine
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: Bash@3
+                  inputs:
+                   targetType: inline
+                   script: |
+                    #!/bin/bash
+                    chromium-browser -version
+                    chromedriver --version
+                    cd $(Pipeline.Workspace)/drop-selenium
+                    unzip -o $(Build.BuildId)-selenium.zip
+                    sudo mkdir -p /var/log/selenium
+                    sudo chmod 664 /var/log/selenium
+                    python3 login.py > ui-logs.log
+                    python3 login.py
+                    sudo mv ui-logs.log /var/log/selenium
+                    cd $(System.DefaultWorkingDirectory)
+                    mkdir -p log/selenium
+                    sudo cp /var/log/selenium/ui-logs.log log/selenium
+                - task: PublishPipelineArtifact@1
+                  displayName: Publish selenium logs
+                  inputs:
+                    targetPath: '$(System.DefaultWorkingDirectory)/log/selenium/ui-logs.log'
+                    artifactName: 'drop-selenium-logs'
+                    
+      - job: Test_Jmeter
+        displayName: Performance testing
+        pool:
+          vmImage: 'ubuntu-18.04'
+        steps:
+          - bash: |
+              # sudo apt-get install openjdk-11-jre-headless -y
+              java -version
+              wget https://dlcdn.apache.org//jmeter/binaries/apache-jmeter-5.4.3.zip
+              unzip apache-jmeter-5.4.3.zip              
+              echo "####################"
+              echo "jmeter version : " 
+              apache-jmeter-5.4.3/bin/jmeter -v
+              echo "####################"
+              mkdir -p log/jmeter
+            displayName: Install JMeter
+          - bash: |
+              apache-jmeter-5.4.3/bin/jmeter -n -t automatedtesting/jmeter/StressTest.jmx -l log/jmeter/stress-test-result.csv -e -o log/jmeter/stress-test-html-report -j log/jmeter/jmeter-stress-test.log
+            displayName: Stress test
+          - bash: |
+              apache-jmeter-5.4.3/bin/jmeter -n -t automatedtesting/jmeter/EnduranceTest.jmx -l log/jmeter/endurance-test-result.csv -e -o log/jmeter/endurance-test-html-report -j log/jmeter/jmeter-endurance-test.log
+            displayName: EnduranceTest
+          - task: ArchiveFiles@2
+            displayName: Archive HTML report
+            inputs:
+              rootFolderOrFile: '$(System.DefaultWorkingDirectory)/log/jmeter/stress-test-html-report'
+              includeRootFolder: false
+              archiveType: zip
+              archiveFile: '$(System.DefaultWorkingDirectory)/log/jmeter/stress-test-html-report.zip'
+              verbose: true
+          - task: ArchiveFiles@2
+            displayName: Archive HTML report
+            inputs:
+              rootFolderOrFile: '$(System.DefaultWorkingDirectory)/log/jmeter/endurance-test-html-report'
+              includeRootFolder: false
+              archiveType: zip
+              archiveFile: '$(System.DefaultWorkingDirectory)/log/jmeter/endurance-test-html-report.zip'
+              verbose: true
+          - task: PublishPipelineArtifact@1
+            displayName: Publish JMeter logs
+            inputs:
+              targetPath: '$(System.DefaultWorkingDirectory)/log/jmeter'
+              artifact: drop-jmeter   
 
-      - task: TaurusRunner@0
-        displayName: 'Running Stress Test on API'
-        inputs:
-            taurusConfig: |
-              execution:
-              - scenario:
-                  script: $(System.DefaultWorkingDirectory)/automatedtesting/jmeter/Starter.jmx
-              reporting:
-              - module: junit-xml
-                filename: taurus-output/Stress-Test-Results-$(Build.BuildId).xml
-            jmeterHome: '$(JMeterInstaller.JMeterHome)'
-            jmeterPath: '$(JMeterInstaller.JMeterPath)'
-            jmeterVersion: '$(JMeterInstaller.JMeterVersion)'
-            outputDir: 'taurus-output'
-            taurusArguments: -o modules.jmeter.properties.numThreads=10
-            reportName: Stress-Test-Report
-
-      - task: PublishTestResults@2
-        displayName: 'Publishing JMeter Stress Test Results'
-        inputs:
-          testResultsFormat: 'JUnit'
-          testResultsFiles: '$(System.DefaultWorkingDirectory)/taurus-output/Stress-Test-Results-$(Build.BuildId).xml'
-          testRunTitle: 'Publishing JMeter Load Test'
-          failTaskOnFailedTests: false
-      
-      - task: TaurusRunner@0
-        displayName: 'Running Endurance Test on API'
-        inputs:
-            taurusConfig: |
-                execution:
-                - scenario:
-                    script: $(System.DefaultWorkingDirectory)/automatedtesting/jmeter/Starter.jmx
-                reporting:
-                - module: junit-xml
-                  filename: taurus-output-endurance/Endurance-Test-Results-$(Build.BuildId).xml
-            jmeterHome: '$(JMeterInstaller.JMeterHome)'
-            jmeterPath: '$(JMeterInstaller.JMeterPath)'
-            jmeterVersion: '$(JMeterInstaller.JMeterVersion)'
-            outputDir: 'taurus-output-endurance'
-            taurusArguments: -o modules.jmeter.properties.numThreads=10 -o modules.jmeter.properties.timeInSeconds=20
-            reportName: Endurance-Test-Report
-
-      - task: PublishTestResults@2
-        displayName: 'Publishing JMeter Endurance Test Results'
-        inputs:
-          testResultsFormat: 'JUnit'
-          testResultsFiles: '$(System.DefaultWorkingDirectory)/taurus-output-endurance/Endurance-Test-Results-$(Build.BuildId).xml'
-          testRunTitle: 'Publishing JMeter Endurance Test'
-          failTaskOnFailedTests: false
+      - job: Test_Post_man
+        displayName: Postman Test
+        pool:
+            vmImage: 'ubuntu-18.04'
+        steps: 
+          - task: NodeTool@0
+            displayName: Install Node v14.X
+            inputs:
+              versionSpec: '14.x'
+          - bash: |
+              node -v
+              sudo npm install -g newman
+              mkdir -p log/newman
+              newman -v
+            displayName: Install Newman CLI
+          - bash: |
+                newman run automatedtesting/postman/project3-aruze-ReTest.postman_collection.json -e automatedtesting/postman/Env.RegressionTest.postman_environment.json --reporters cli,junit --reporter-junit-export log/newman/RegressionTest.xml --suppress-exit-code
+            displayName: Run Regression Test
+          - bash: |
+                newman run automatedtesting/postman/project3-aruze-ValTest.postman_collection.json -e automatedtesting/postman/Env.ValidationTest.postman_environment.json --reporters cli,junit --reporter-junit-export log/newman/ValidationTest.xml --suppress-exit-code
+            displayName: Run Validation Test
+          - task: PublishPipelineArtifact@1
+            displayName: Publish Newman logs
+            inputs:
+              targetPath: '$(System.DefaultWorkingDirectory)/log/newman'
+              artifactName: 'drop-newman-logs'
+          - task: PublishTestResults@2
+            displayName: Publish report postman
+            condition: always()
+            inputs:
+             testResultsFormat: JUnit
+             testResultsFiles: '$(System.DefaultWorkingDirectory)/log/newman/*.xml'
