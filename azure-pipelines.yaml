@@ -26,7 +26,7 @@ stages:
         displayName: Copy terraform.tfvars
         inputs:
           targetType: 'inline'
-          script: cp $(Agent.TempDirectory)/terraform.tfvars $(System.DefaultWorkingDirectory)/terraform/environments/test
+          script: cp $(Agent.TempDirectory)/terraform.tfvars $(System.DefaultWorkingDirectory)/terraform
 
       # Needed for Terraform VM deployment
       - task: InstallSSHKey@0
@@ -42,8 +42,8 @@ stages:
         inputs:
           provider: 'azurerm'
           command: 'init'
-          workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environment/test'
-          backendServiceArm: 'azure-service-connection'
+          workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
+          backendServiceArm: 'azure-service-connection-project03'
           backendAzureRmResourceGroupName: 'thoanvtt-test-01999-rg'
           backendAzureRmStorageAccountName: '$(StorageAccountName)'
           backendAzureRmContainerName: 'thoanvttcontainer01999'
@@ -55,15 +55,15 @@ stages:
         inputs:
           provider: 'azurerm'
           command: 'validate'
-          workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environment/test'
-          backendServiceArm: 'azure-service-connection'
+          workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
+          backendServiceArm: 'azure-service-connection-project03'
       - task: TerraformTaskV2@2
         displayName: Terraform Plan
         inputs:
           provider: 'azurerm'
           command: 'plan'
-          workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environment/test'
-          environmentServiceNameAzureRM: 'azure-service-connection'
+          workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
+          environmentServiceNameAzureRM: 'azure-service-connection-project03'
       - task: TerraformTaskV2@2
         displayName: Terraform Apply
         inputs:
@@ -71,8 +71,8 @@ stages:
           command: 'apply'
           commandOptions: |
             -auto-approve
-          workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environment/test'
-          environmentServiceNameAzureRM: 'azure-service-connection'
+          workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
+          environmentServiceNameAzureRM: 'azure-service-connection-project03'
 
 
   - stage: Build
@@ -122,7 +122,7 @@ stages:
             - task: AzureWebApp@1
               displayName: 'Deploy Azure Web App'
               inputs:
-                azureSubscription: 'azure-service-connection'
+                azureSubscription: 'azure-service-connection-project03'
                 appName: 'App-project3'
                 appType: webApp
                 package: $(Pipeline.Workspace)/drop-fakerestapi/$(Build.BuildId)-fakerestapi.zip

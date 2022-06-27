@@ -1,8 +1,8 @@
 # Azure subscription vars
-subscription_id = ""
-client_id = ""
-client_secret = ""
-tenant_id = ""
+subscription_id = "f11cc760-de99-4c5d-8c73-861ec8a92622"
+client_id = "fcfee967-2e1d-4c01-ae44-edb3008d1ec3"
+client_secret = "42I8Q~yBYVYyLAFHyOygwEEKl4E1JU-Ozp2uhagn"
+tenant_id = "67cbc4fd-1f4f-477d-b827-49f59b5582f3"
 
 # Resource Group/Location
 location = "australiaeast"

@@ -1,10 +1,10 @@
 {
-    "client_id": "value",
-    "client_secret": "value",
-    "tenant_id": "value",
-    "subscription_id": "value",
-    "managed_image_resource_group_name": "project3",
+    "client_id": "fcfee967-2e1d-4c01-ae44-edb3008d1ec3",
+    "client_secret": "42I8Q~yBYVYyLAFHyOygwEEKl4E1JU-Ozp2uhagn",
+    "tenant_id": "67cbc4fd-1f4f-477d-b827-49f59b5582f3",
+    "subscription_id": "f11cc760-de99-4c5d-8c73-861ec8a92622",
+    "managed_image_resource_group_name": "thoanvtt-test-01999-rg",
     "managed_image_name": "VM",
     "tag":"VM-QA",
-    "location": "australiasoutheast"
+    "location": "australiaeast"
 }
