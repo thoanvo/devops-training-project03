@@ -123,7 +123,7 @@ stages:
               displayName: 'Deploy Azure Web App'
               inputs:
                 azureSubscription: 'azure-service-connection-project03'
-                appName: 'App-project3'
+                appName: 'udacity-thoanvtt-project03-app-AppService'
                 appType: webApp
                 package: $(Pipeline.Workspace)/drop-fakerestapi/$(Build.BuildId)-fakerestapi.zip
                 deploymentMethod: auto          
