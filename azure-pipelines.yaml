@@ -43,7 +43,7 @@ stages:
           provider: 'azurerm'
           command: 'init'
           workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
-          backendServiceArm: 'azure-service-connection-project03'
+          backendServiceArm: 'udacity-deploy-azure-service-connection'
           backendAzureRmResourceGroupName: 'thoanvtt-test-01999-rg'
           backendAzureRmStorageAccountName: '$(StorageAccountName)'
           backendAzureRmContainerName: 'thoanvttcontainer01999'
@@ -56,14 +56,14 @@ stages:
           provider: 'azurerm'
           command: 'validate'
           workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
-          backendServiceArm: 'azure-service-connection-project03'
+          backendServiceArm: 'udacity-deploy-azure-service-connection'
       - task: TerraformTaskV2@2
         displayName: Terraform Plan
         inputs:
           provider: 'azurerm'
           command: 'plan'
           workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
-          environmentServiceNameAzureRM: 'azure-service-connection-project03'
+          environmentServiceNameAzureRM: 'udacity-deploy-azure-service-connection'
       - task: TerraformTaskV2@2
         displayName: Terraform Apply
         inputs:
@@ -72,7 +72,7 @@ stages:
           commandOptions: |
             -auto-approve
           workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
-          environmentServiceNameAzureRM: 'azure-service-connection-project03'
+          environmentServiceNameAzureRM: 'udacity-deploy-azure-service-connection'
 
 
   - stage: Build
@@ -254,10 +254,10 @@ stages:
               newman -v
             displayName: Install Newman CLI
           - bash: |
-                newman run automatedtesting/postman/project3-aruze-ReTest.postman_collection.json -e automatedtesting/postman/Env.RegressionTest.postman_environment.json --reporters cli,junit --reporter-junit-export log/newman/RegressionTest.xml --suppress-exit-code
+                newman run automatedtesting/postman/udacity-project3-ReTest.postman_collection.json -e automatedtesting/postman/Env.RegressionTest.postman_environment.json --reporters cli,junit --reporter-junit-export log/newman/RegressionTest.xml --suppress-exit-code
             displayName: Run Regression Test
           - bash: |
-                newman run automatedtesting/postman/project3-aruze-ValTest.postman_collection.json -e automatedtesting/postman/Env.ValidationTest.postman_environment.json --reporters cli,junit --reporter-junit-export log/newman/ValidationTest.xml --suppress-exit-code
+                newman run automatedtesting/postman/udacity-project3-ValTest.postman_collection.json -e automatedtesting/postman/Env.ValidationTest.postman_environment.json --reporters cli,junit --reporter-junit-export log/newman/ValidationTest.xml --suppress-exit-code
             displayName: Run Validation Test
           - task: PublishPipelineArtifact@1
             displayName: Publish Newman logs
