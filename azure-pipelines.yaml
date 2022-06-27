@@ -42,26 +42,27 @@ stages:
         inputs:
           provider: 'azurerm'
           command: 'init'
+          workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environment/test'
           backendServiceArm: 'azure-service-connection'
           backendAzureRmResourceGroupName: 'thoanvtt-test-01999-rg'
           backendAzureRmStorageAccountName: '$(StorageAccountName)'
           backendAzureRmContainerName: 'thoanvttcontainer01999'
           backendAzureRmKey: 'terraform.tfstate'
-          workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environment/test/'
+          
 
       - task: TerraformTaskV2@2
         displayName: Terraform Validate
         inputs:
           provider: 'azurerm'
           command: 'validate'
-          workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environment/test/'
+          workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environment/test'
           backendServiceArm: 'azure-service-connection'
       - task: TerraformTaskV2@2
         displayName: Terraform Plan
         inputs:
           provider: 'azurerm'
           command: 'plan'
-          workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environment/test/'
+          workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environment/test'
           environmentServiceNameAzureRM: 'azure-service-connection'
       - task: TerraformTaskV2@2
         displayName: Terraform Apply
@@ -70,7 +71,7 @@ stages:
           command: 'apply'
           commandOptions: |
             -auto-approve
-          workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environment/test/'
+          workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environment/test'
           environmentServiceNameAzureRM: 'azure-service-connection'
 
 
