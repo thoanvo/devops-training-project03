@@ -1,6 +1,6 @@
 echo "Starting creating resources"
 
-RESOURCE_GROUP_NAME=thoanvtt-test-project03-rg
+RESOURCE_GROUP_NAME=thoanvtt-test-01999-rg
 STORAGE_ACCOUNT_NAME=thoanvttstorage01999
 CONTAINER_NAME=thoanvttcontainer01999
 
