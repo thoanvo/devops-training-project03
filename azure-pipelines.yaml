@@ -109,7 +109,7 @@ stages:
          targetPath: $(Build.BuildId)-selenium.zip
          artifact: drop-selenium
   - stage: DeployApp
-    displayName: Deploy App
+    displayName: Deploy App to Custom VM
     jobs:
     - deployment: FakeRestAPI
       pool:
@@ -122,7 +122,7 @@ stages:
             - task: AzureWebApp@1
               displayName: 'Deploy Azure Web App'
               inputs:
-                azureSubscription: 'azure-service-connection-project03'
+                azureSubscription: 'udacity-deploy-azure-service-connection'
                 appName: 'udacity-thoanvtt-project03-app-AppService'
                 appType: webApp
                 package: $(Pipeline.Workspace)/drop-fakerestapi/$(Build.BuildId)-fakerestapi.zip
