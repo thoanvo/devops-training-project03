@@ -1,0 +1,10 @@
+{
+    "client_id": "value",
+    "client_secret": "value",
+    "tenant_id": "value",
+    "subscription_id": "value",
+    "managed_image_resource_group_name": "project3",
+    "managed_image_name": "VM",
+    "tag":"VM-QA",
+    "location": "australiasoutheast"
+}
