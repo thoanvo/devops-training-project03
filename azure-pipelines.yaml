@@ -141,24 +141,34 @@ stages:
               inputs:
                 targetType: 'inline'
                 script: |
-                  #!/bin/bash
-                  sudo apt-get update -y
+                  #! /bin/bash
+                  
                   sudo apt-get upgrade -y
                   sudo apt-get install python3-pip -y
                   sudo apt-get install unzip -y
                   sudo apt-get install -y chromium-browser
-                  sudo apt-get install -y chromium-chromedriver
-                  python3 -m pip install --upgrade pip
                   pip3 install selenium
+                  
+                  # download chrome driver v89
+                  FILE=chromedriver_linux64.zip
+                  if [ -f "$FILE" ]; then
+                    echo "$FILE exists."
+                  else
+                    wget https://chromedriver.storage.googleapis.com/89.0.4389.23/chromedriver_linux64.zip
+                  fi
+                  # install chrome driver
+                  unzip chromedriver_linux64.zip
+                  sudo mv chromedriver /usr/bin/chromedriver
+                  sudo chown root:root /usr/bin/chromedriver
+                  sudo chmod +x /usr/bin/chromedriver
                   python3 -V
                   pip3 -V
                   export PATH=$PATH:/usr/local/bin
                   chromium-browser -version
                   chromedriver --version
                   # agent log analytics
-              env:  # To use secret variables in a script, we must explicitly map them as environment variables.
-                AZURE_LOG_ANALYTICS_ID: $(AZURE_LOG_ANALYTICS_ID)
-                AZURE_LOG_ANALYTICS_PRIMARY_KEY: $(AZURE_LOG_ANALYTICS_PRIMARY_KEY)
+                  wget https://raw.githubusercontent.com/Microsoft/OMS-Agent-for-Linux/master/installer/scripts/onboard_agent.sh && sh onboard_agent.sh -w ba2f2875-7939-40f7-8fab-9fdfe5774935 -s rb9iiVdW/SUHbVCH4V83NX16EgaXKTEtX7WfGSxykJ3iCaZ/Tm/FFqigsvOAUajQZM0L5k9vAnyM3lD4Iv61cw==
+                  sudo /opt/microsoft/omsagent/bin/service_control restart ba2f2875-7939-40f7-8fab-9fdfe5774935
               displayName: Configure VM   
   - stage: Test
     jobs:
@@ -200,7 +210,7 @@ stages:
           vmImage: 'ubuntu-18.04'
         steps:
           - bash: |
-              # sudo apt-get install openjdk-11-jre-headless -y
+              sudo apt-get install openjdk-11-jre-headless -y
               java -version
               wget https://dlcdn.apache.org//jmeter/binaries/apache-jmeter-5.4.3.zip
               unzip apache-jmeter-5.4.3.zip              
