@@ -202,22 +202,22 @@ stages:
           - bash: |
               sudo apt-get install openjdk-11-jre-headless -y
               java -version
-              wget https://dlcdn.apache.org//jmeter/binaries/apache-jmeter-5.4.3.zip
-              unzip apache-jmeter-5.4.3.zip              
+              wget https://dlcdn.apache.org//jmeter/binaries/apache-jmeter-5.5.zip
+              unzip apache-jmeter-5.5.zip              
               echo "####################"
               echo "jmeter version : " 
-              apache-jmeter-5.4.3/bin/jmeter -v
+              apache-jmeter-5.5/bin/jmeter -v
               echo "####################"
               mkdir -p log/jmeter
             displayName: Install JMeter
           - bash: |
-              apache-jmeter-5.4.3/bin/jmeter -n -t automatedtesting/jmeter/StressTest.jmx -l log/jmeter/stress-test-result.csv -e -o log/jmeter/stress-test-html-report -j log/jmeter/jmeter-stress-test.log
+              apache-jmeter-5.5/bin/jmeter -n -t automatedtesting/jmeter/StressTest.jmx -l log/jmeter/stress-test-result.csv -e -o log/jmeter/stress-test-html-report -j log/jmeter/jmeter-stress-test.log
             displayName: Stress test
           - bash: |
-              apache-jmeter-5.4.3/bin/jmeter -n -t automatedtesting/jmeter/EnduranceTest.jmx -l log/jmeter/endurance-test-result.csv -e -o log/jmeter/endurance-test-html-report -j log/jmeter/jmeter-endurance-test.log
+              apache-jmeter-5.5/bin/jmeter -n -t automatedtesting/jmeter/EnduranceTest.jmx -l log/jmeter/endurance-test-result.csv -e -o log/jmeter/endurance-test-html-report -j log/jmeter/jmeter-endurance-test.log
             displayName: EnduranceTest
           - task: ArchiveFiles@2
-            displayName: Archive HTML report
+            displayName: Publish Stress Test Results
             inputs:
               rootFolderOrFile: '$(System.DefaultWorkingDirectory)/log/jmeter/stress-test-html-report'
               includeRootFolder: false
@@ -225,7 +225,7 @@ stages:
               archiveFile: '$(System.DefaultWorkingDirectory)/log/jmeter/stress-test-html-report.zip'
               verbose: true
           - task: ArchiveFiles@2
-            displayName: Archive HTML report
+            displayName: Publish Endurance Test Results
             inputs:
               rootFolderOrFile: '$(System.DefaultWorkingDirectory)/log/jmeter/endurance-test-html-report'
               includeRootFolder: false
@@ -237,6 +237,15 @@ stages:
             inputs:
               targetPath: '$(System.DefaultWorkingDirectory)/log/jmeter'
               artifact: drop-jmeter   
+          
+          - task: Bash@3
+            displayName: 'Print Performance Test Logs'
+            inputs:
+              targetType: 'inline'
+              script: |
+                ls -lah log/jmeter/
+                ls -lah log/jmeter/stress-test-report/
+                cat jmeter-stress-test.log 
 
       - job: Test_Post_man
         displayName: Postman Test
