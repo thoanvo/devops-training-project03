@@ -244,14 +244,6 @@ stages:
             inputs:
               targetPath: '$(System.DefaultWorkingDirectory)/log/jmeter'
               artifact: drop-jmeter   
-          
-          - task: Bash@3
-            displayName: 'Print Performance Test Logs'
-            inputs:
-              targetType: 'inline'
-              script: |
-                ls -lah log/jmeter/stress-test-report/
-                cat jmeter-stress-test.log 
 
       - job: Test_Post_man
         displayName: Postman Test
