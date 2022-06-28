@@ -202,22 +202,22 @@ stages:
           - bash: |
               sudo apt-get install openjdk-11-jre-headless -y
               java -version
-              wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.4.tgz -O jmeter.tgz
+              wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.5.tgz -O jmeter.tgz
               tar xzvf jmeter.tgz
               echo "####################"
               echo "jmeter version : " 
-              apache-jmeter-5.4/bin/jmeter --version   
+              apache-jmeter-5.5/bin/jmeter --version   
               echo "####################"
               mkdir -p log/jmeter
               pwd
               ls -la
             displayName: Install JMeter
           - bash: |
-              apache-jmeter-5.4/bin/jmeter -n -t automatedtesting/jmeter/StressTest.jmx -l log/jmeter/stress-test-result.csv -e -f -o log/jmeter/stress-test-html-report -j log/jmeter/jmeter-stress-test.log
+              apache-jmeter-5.5/bin/jmeter -n -t automatedtesting/jmeter/StressTest.jmx -l log/jmeter/stress-test-result.csv -e -f -o log/jmeter/stress-test-html-report -j log/jmeter/jmeter-stress-test.log
               cat log/jmeter/jmeter-stress-test.log
             displayName: JMeter stress test
           - bash: |
-              apache-jmeter-5.4/bin/jmeter -n -t automatedtesting/jmeter/EnduranceTest.jmx -l log/jmeter/endurance-test-result.csv -e -f -o log/jmeter/endurance-test-html-report -j log/jmeter/jmeter-endurance-test.log
+              apache-jmeter-5.5/bin/jmeter -n -t automatedtesting/jmeter/EnduranceTest.jmx -l log/jmeter/endurance-test-result.csv -e -f -o log/jmeter/endurance-test-html-report -j log/jmeter/jmeter-endurance-test.log
               cat log/jmeter/jmeter-endurance-test.log
             displayName: JMeter endurance test
           - task: ArchiveFiles@2
@@ -247,7 +247,6 @@ stages:
             inputs:
               targetType: 'inline'
               script: |
-                ls -lah log/jmeter/
                 ls -lah log/jmeter/stress-test-report/
                 cat jmeter-stress-test.log 
 
