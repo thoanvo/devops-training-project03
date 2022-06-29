@@ -9,7 +9,7 @@
 - **[Azure Resources](#Azure-Resources)**
 - **[Installation Configuration Steps](#Installation-Configuration-Steps)**
 - **[Monitoring And Logging Result](#Monitoring-And-Logging-Result)**
-- **[Clean Up](#Clean-It-Up)**
+- **[Clean Up](#Clean-Up)**
 
 ## Overview
 
@@ -37,7 +37,7 @@ This project demonstrates how to ensure quality releases using Azure cloud throu
  - Terraform Service principle (resource)
  - Azure CLI (resource)
 
-## Installation & Configuration Steps
+## Installation Configuration Steps
 ### Terraform in Azure
 1. Clone source repo
 2. Open a Terminal in VS Code and connect to your Azure Account and get the Subscription ID
@@ -218,12 +218,12 @@ az ad sp create-for-rbac --role Contributor --scopes /subscriptions/<your-subscr
   ![img](screenshots/azure-monitor-alert-triggered.png)
 
 
-## Monitoring & Logging Result
+## Monitoring And Logging Result
 Configure Azure Log Analytics to consume and aggregate custom application events in order to discover root causes of operational faults, and subsequently address them.
 
 ### Environment Creation & Deployment
   #### The pipeline build results page
-  ![Pipeline-Result](screenshots/pipeline-build-result-page.png)
+  ![Pipeline-Result](screenshots/automation-test-result.png)
 
   #### Terraform Init
   ![Terraform](screenshots/terraform-init-in-pipeline.png)
