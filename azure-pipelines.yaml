@@ -137,19 +137,22 @@ stages:
         runOnce:
           deploy:
             steps:
+            - task: UsePythonVersion@0
+              displayName: 'Use Python 3.7.13'
             - task: Bash@3
               inputs:
+                versionSpec: 3.7.13
                 targetType: 'inline'
                 script: |
                   #! /bin/bash
                   sudo apt-get upgrade -y
                   sudo apt-get update -y
-                  sudo apt-get install python3.7.13
+                  sudo apt-get install python3-pip -y
                   sudo apt-get install unzip -y
                   sudo apt-get install -y chromium-browser
                   sudo apt-get install -y chromium-driver
                   pip install --upgrade pip
-                  pip3 install selenium
+                  pip3 install -U selenium
                   export PATH=$PATH:/usr/bin/chromedriver
                   # agent log analytics
               env:  # To use secret variables in a script, we must explicitly map them as environment variables.
