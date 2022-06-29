@@ -149,10 +149,9 @@ stages:
                   sudo apt-get install -y chromium-browser
                   sudo apt-get install -y chromium-driver
                   sudo -H pip3 install --upgrade pip
-                  sudo python3 get-pip.py
                   pip install -U selenium
                   echo "python version: "
-                  python --version 
+                  python3 --version 
                   export PATH=$PATH:/usr/bin/chromedriver
                   # agent log analytics
               env:  # To use secret variables in a script, we must explicitly map them as environment variables.
