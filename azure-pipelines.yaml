@@ -1,7 +1,6 @@
 name: Azure Pipelines
 variables:
   - group: ssh-config
-  python.version: "3.7.13"
 stages:
   - stage: Infrastructure
     displayName: Azure Resources Create with terraform
@@ -150,7 +149,9 @@ stages:
                   sudo apt-get install -y chromium-browser
                   sudo apt-get install -y chromium-driver
                   pip install --upgrade pip
-                  pip3 install -U selenium
+                  sudo pip3 install selenium
+                  echo "python version : "
+                  python -version 
                   export PATH=$PATH:/usr/bin/chromedriver
                   # agent log analytics
               env:  # To use secret variables in a script, we must explicitly map them as environment variables.
