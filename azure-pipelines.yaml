@@ -148,8 +148,9 @@ stages:
                   sudo apt-get install unzip -y
                   sudo apt-get install -y chromium-browser
                   sudo apt-get install -y chromium-driver
-                  pip install --upgrade pip
-                  sudo pip3 install selenium
+                  sudo -H pip3 install --upgrade pip
+                  python get-pip.py
+                  pip install -U selenium
                   echo "python version: "
                   python --version 
                   export PATH=$PATH:/usr/bin/chromedriver
