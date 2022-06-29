@@ -149,7 +149,7 @@ stages:
                   sudo apt-get install -y chromium-browser
                   sudo apt-get install -y chromium-driver
                   sudo -H pip3 install --upgrade pip
-                  python get-pip.py
+                  sudo python3 get-pip.py
                   pip install -U selenium
                   echo "python version: "
                   python --version 
