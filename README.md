@@ -6,10 +6,10 @@
 
 - **[Overview](#Overview)**
 - **[Dependencies](#Dependencies)**
-- **[AzureResources](#Azure Resources)**
+- **[Azure Resources](#Azure-Resources)**
 - **[Steps](#Steps)**
-- **[MonitoringLogging](#Monitoring & Logging)**
-- **[CleanitUp](#Clean it Up)**
+- **[Monitoring and Logging](#Monitoring-Logging)**
+- **[Clean Up](#Clean-It-Up)**
 
 ## Overview
 
@@ -66,7 +66,7 @@ az account list --output table
     }
   ```
 
-![azurerm-backend](./screenshots/azurerm-backend.png)
+  ![azurerm-backend](./screenshots/azurerm-backend.png)
 
 ### Create a Service Principal for Terraform
 1. Create a  Service Principal with **Contributor** role, performing the following steps:
@@ -85,11 +85,6 @@ az ad sp create-for-rbac --role Contributor --scopes /subscriptions/<your-subscr
   cat ~/.ssh/id_rsa.pub
   ```
 
-  ```bash
-  ssh-keyscan github.com
-  ```
-  * Take notes of **appId**, **password**, and **tenant** as will be used at **terraform/terraform.tfvars** file 
-
 ### Azure DevOps
 1. Login to Azure DevOPs and perform the following settings before to execute the Pipeline. 
 
@@ -103,29 +98,35 @@ az ad sp create-for-rbac --role Contributor --scopes /subscriptions/<your-subscr
 
 3. Create a Project into your Organization
 
-4. Create the Service Connection in Project Settings* Pipelines* Service Connection
+4. Create the Service Connection in Project Settings > Pipelines > Service Connection
 
-  ![service-connection](screenshots/service-connection.png) <br/>
+    ![service-connection](screenshots/service-connection.png) <br/>
  
 5. Add into Pipelines --> Library --> Secure files these 2 files:
-the private secure file : **id_rsa key**
-the terraform tfvars file : **terraform.tfvars**
+  * The private secure file : **id_rsa key**
+  * The terraform tfvars file : **terraform.tfvars**
 
-  ![library-secure-files](./screenshots/library-secure-files.png)
+    ![library-secure-files](./screenshots/library-secure-files.png)
 
 6. Modify the following lines on azure-pipelines.yaml before to update your own repo:
     * Get your "Known Hosts Entry" is the displayed third value that doesn't begin with # in the GitBash results:<br/>
-      ![img](screenshots/known-hosts-entry.png) <br/>
+    
+    ```bash
+    ssh-keyscan github.com
+    ```
+    * Take note value in highlight below to fill **knownHostsEntry**
 
-    | Line #  | parameter | description |
+    ![azurerm-backend](screenshots/ssh-keyscan.png)
+
+    | # #  | parameter | description |
     | ------ | ------ | ------ |
-    | 13| knownHostsEntry |  the knownHost of your ssh-keyscan github |
-    | 14 | sshPublicKey |  your public ssh key |
-    | 66 | azureSubscription | your Pipeline --> Service Connection ID ( step 10.3)  |
+    | 1| knownHostsEntry |  the knownHost of your ssh-keyscan github |
+    | 2 | sshPublicKey |  your public ssh key (from id_rsa.pub) |
+    | 3 | storageAccountName | Value from Configure storage account to Store Terraform state |
 
 7. Create groups of variables
   Create groups of variables that you can share across multiple pipelines. 
-  * Choose "+Variable groups" > Add name groups of variables : ssh-config > Add **knownHostsEntry**,**sshPublicKey**,**StorageAccountName (step 3)** and value this in Variables > Select type to secret > Save <br/>
+  * Choose "+Variable groups" > Add name groups of variables : ssh-config > Add **knownHostsEntry**, **sshPublicKey**, **StorageAccountName** and value this in Variables > Select type to secret > Save <br/>
   ![screen shot](screenshots/variable-group.png) <br/>  
 
 8. Create a New Pipeline in your Azure DevOPs Project
@@ -134,56 +135,46 @@ the terraform tfvars file : **terraform.tfvars**
  - Existing Azure Pipelines YAML file
  - Choosing **azure-pipelines.yaml** file
 
-      8.1. Tab Pipelines -> Create Pipeline -> Where is your code? Choose Github(Yaml) -> Select Repo -> Configure your pipeline
-      : CHoose "Existing Azure Pipelines yaml file"* Continue* Run <br/>
+      8.1. Tab Pipelines -> Create Pipeline -> Where is your code? Choose Github (Yaml) -> Select Repo -> Configure your pipeline
+      : Choose "Existing Azure Pipelines yaml file" > Continue > Run <br/>
         ![img](screenshots/select-existing-yaml-file.png) <br/>
+
         ![img](screenshots/run-pipeline.png) <br/>
 
       8.2. Apcept permission for Azure Resources Create with terraform <br/>
         ![img](screenshots/permission-needed.png) <br/>
+
         ![img](screenshots/permission-permit.png) <br/>
 
-      8.3. Pipeline run step like this <br/>
-        ![img](screenshots/p28.png) <br/>
-        ![img](screenshots/p29.png) <br/>
+      8.3. When step deploy virtual machine(VM) if you can see error : "No resource found ...". you must Registration VM on environment Pipeline and you only need to run it once <br/>
 
-      8.4. When step deploy virtual machine(VM) if you can see error : "no resource found ...". you must Registration VM on environment Pipeline and you only need to run it once <br/>
+      8.4. Go to Azure pipeline -> Environments -> you can see Environments name is "TEST" -> Choose and select "Add resource" -> choose "Virtual machines" > Select "Linux" and Choose icon "Copy command ..." > Close <br>
+      Something similar to </br>
+        ![img1](screenshots/devops-add-resource.png) </br>
+        ![img2](screenshots/devops-add-resource-script.png)
 
-      8.5. Go to Azure pipeline -> Environments -> you can see Environments name is "TEST" -> Choose and select "Add resource" -> choose "Virtual machines"* Select "Linux" and Choose icon "Copy command ..."* Close
-      Something similar to 
-        ![img1](./screenshots/devops-add-resource.png) </br>
-        ![img2](./screenshots/devops-add-resource-script.png)
-
-      8.6. SSH into the VM created using the Public IP -> Enter command you just copy above step -> Run it -> Success if you see result like this 
-        ![img3](./screenshots/excute-script-in-vm.png)
+      8.5. SSH into the VM created using the Public IP -> Enter command you just copy above step -> Run it -> Success if you see result like this 
+      ![img3](screenshots/devops-excute-add-resource-script.png) <br>
+        
+      ![img4](screenshots/excute-script-in-vm.png)
 
       Get at the end a result like:
 
-       ![img4](./screenshots/result-add-resource-vm.png)
+      ![img5](screenshots/devops-result-add-resource-vm.png)
 
-      8.7. Back to pipeline and re-run
+      8.6. Back to pipeline and re-run
 
 
 9. Wait the Pipeline is going to execute on the following Stages:
 
-  Azure Resources Create --> Build --> Deploy App --> Test
+    Azure Resources Create --> Build --> Deploy App --> Test
 
-  ![img2](./screenshots/pipeline-stages.png)
-
-  * Explanation of the Stages
-
- * Azure Resources Create : using Terraform , perform the provisioning of the IaC (RG, VNet, subnet, public IP, App Service, VM Linux).
-
- * Build: Build FakeRestAPI artifact by archiving the entire fakerestapi directory into a zip file and publishing the pipeline artifact to the artifact staging directory, same for Selenium py file.
-
- * Deploy App : Deploy FakeRestAPI artifact to the Azure App Service (created on IaC). The deployed webapp URL is https://udacity-thoanvtt-project03-app-appservice.azurewebsites.net. And also deploy Selenium and Chromium to the VM created in IaC
-
- * Test: Execution of the Selenium Tests an publish its results using the VM-TEST environment. Postman Regression and Data Validation tests (using newman/postman) to the APP api created above and publishing the results. JMeter TEsts:  JMeter Tests - Endurance & Stress Tests to the APP created above, and publish the results. UI Tests : Execution of the Selenium Tests an publish its results using the VM-TEST environment.
+    ![img](./screenshots/automation-test-result.png)
 
 ### Configure Logging for the VM in the Azure Portal.
-1. Create a Log Analytics workspace using this script for simplicity. It will be created on the same RG used by terraform (so if put another name, change the RG in the script!!)
+1. Create a Log Analytics workspace. It will be created on the same RG used by terraform
 
-  ![img2](./screenshots/pipeline-stages.png)
+    ![img](./screenshots/log-analytics-workspace.png)
 
 2. Set up email alerts in the App Service:
  
@@ -206,69 +197,119 @@ the terraform tfvars file : **terraform.tfvars**
 
   * Go to Virtual Machines and Connect the VM created on Terraform to the Workspace ( Connect). Just wait that shows `Connected`.
 
-  * Set up custom logging , in the log analytics workspace go to Advanced Settings* Data* Custom Logs* Add +* Choose File. Select the file selenium.log* Next* Next. Put in the following paths as type Linux:
+    * Set up custom logging , in the log analytics workspace go to Advanced Settings > Data > Custom Logs > Add > Choose File. Select the file selenium.log > Next > Next. Put in the following paths as type Linux:
 
-  /var/log/selenium/selenium.log
+    /var/log/selenium/selenium.log
 
-  Give it a name ( `selenium_logs_CL`) and click Done. Tick the box Apply below configuration to my linux machines.
+    Give it a name ( `selenium_logs_CL`) and click Done. Tick the box Apply below configuration to my linux machines.
 
   * Go to the App Service web page and navigate on the links and also generate 404 not found , example:
 
-  ```html
-  https://udacity-thoanvtt-project03-app-appservice.azurewebsites.net
+    ```html
+    https://udacity-thoanvtt-project03-app-appservice.azurewebsites.net
 
-  https://udacity-thoanvtt-project03-app-appservice.azurewebsites.net/gggg  ( click this many times so alert will be raised too)
-  ```
+    https://udacity-thoanvtt-project03-app-appservice.azurewebsites.net/gggg  ( click this many times so alert will be raised too)
+    ```
 
-  Go to Log Analytics Workspace , to run the  following queries:
+    Go to Log Analytics Workspace , to run the  following queries:
 
-  ```kusto
-  Operation
-  | where TimeGenerated* ago(2h)
-  | summarize count() by TimeGenerated, OperationStatus, Detail
-  ```
+    ```kusto
+    Operation
+    | where TimeGenerated* ago(2h)
+    | summarize count() by TimeGenerated, OperationStatus, Detail
+    ```
 
-  ```kusto
-  AppServiceHTTPLogs
-  | where TimeGenerated < ago(2h)
-    and ScStatus == '404'
-  ```
+    ```kusto
+    AppServiceHTTPLogs
+    | where TimeGenerated < ago(2h)
+      and ScStatus == '404'
+    ```
 
-  ```kusto
-  SELENIUM_LOGS_CL
-  ```
+    ```kusto
+    SELENIUM_LOGS_CL
+    ```
 
   * After some minutes ( 3 to 10 minutes) , check the email configured since an alert message will be received. and also check the Log Analytics Logs , so you can get visualize the logs and analyze with more detail.
 
-  ![img4](./screenshots/AppService-AlerRule-EmailgetbyUser-Alerting404.png)
+  ![img](screenshots/azure-monitor-alert-triggered.png)
 
 
-## Monitoring & Logging
+## Monitoring & Logging Result
 Configure Azure Log Analytics to consume and aggregate custom application events in order to discover root causes of operational faults, and subsequently address them.
 
-### Terraform:
-![Terraform](screenshots/terraform_output_in_pipeline.png)
+### Environment Creation & Deployment
+  #### The pipeline build results page
+  ![Pipeline-Result](screenshots/pipeline-build-result-page.png)
 
-### FakeRestAPI
-![FakeRestAPI](screenshots/2_deployed_fakerestapi.png)
+  #### Terraform Init
+  ![Terraform](screenshots/terraform-init-in-pipeline.png)
 
-### Pipeline Build:
-![Pipeline build](screenshots/3_successful_execution_of_pipeline.png)
+  #### Terraform Validate
+  ![Terraform](screenshots/terraform-validate-in-pipeline.png)
 
-### JMeter Endurance Test:                                                                       
-![Endurance test](screenshots/4_jmeter_endurance_test.png)
+  #### Terraform Plan
+  ![Terraform](screenshots/terraform-plan-in-pipeline-1.png) <br>
 
-### JMeter Stress Test:
-![Stress test](screenshots/5_jmeter_stress_test.png)
+  ![Terraform](screenshots/terraform-plan-in-pipeline-2.png) <br>
+  
+  ![Terraform](screenshots/terraform-plan-in-pipeline-3.png) <br>
+  
+  ![Terraform](screenshots/terraform-plan-in-pipeline-4.png) <br>
 
-### Selenium:
-![Selenium test](screenshots/6_selenium_tests.png)
+  #### Terraform Apply
+  ![Terraform](screenshots/terraform-apply-in-pipeline-1.png) <br>
 
-### Regression Tests:
-![Regression test](screenshots/7_regression_tests.png)
+  ![Terraform](screenshots/terraform-apply-in-pipeline-2.png) <br>
 
-### Validation Tests:
-![Validation test](screenshots/8_validation_tests.png)
+  ![Terraform](screenshots/terraform-apply-in-pipeline-3.png) <br>
+
+  ![Terraform](screenshots/terraform-apply-in-pipeline-4.png) <br>
+### Automated Testing
+
+  #### FakeRestAPI
+  ![DeployWebApp](screenshots/deploy-azure-web-app.png)
+
+  ![FakeRestAPI](screenshots/fakerestapi.png)
+
+  #### JMeter log output
+  ![JMeterLogOutput](screenshots/jmeter-log-output.png)
+
+  #### JMeter Endurance Test                                                                      
+  ![Endurance test](screenshots/publish-endurance-test-results.png)
+
+  #### JMeter Stress Test:
+  ![Stress test](screenshots/publish-stress-test-results.png)
+
+  #### HTML report:
+  ![HTML report](screenshots/html-report-results.png)
+
+  #### Selenium:
+  ![Selenium test](screenshots/6_selenium_tests.png)
+
+  #### Regression Tests
+  ![Regression test](screenshots/test-run-regression-postman.png)
+
+  ![Regression test](screenshots/junit-regression-test.png)
+
+  ![Regression test](screenshots/junit-regression-test-1.png)
+
+  #### Validation Tests
+  ![Validation test](screenshots/test-run-validation-postman.png)
+
+  ![Validation test](screenshots/junit-validation-test.png)
+
+  ![Validation test](screenshots/junit-validation-test-1.png)
+
+  #### Run Summary page
+  ![Validation test](screenshots/test-run-validation-postman.png)
+
+  #### Publish Test Results step
+
+  #### Test Results page
+
+  #### The artifact is downloaded from the Azure DevOps and available under the project-submission-artifacts folder.
+
+
 
 ### Logs from Azure Log Analytics:
 ![Validation test](screenshots/9_azure_log_analytics_logs.png)
@@ -276,7 +317,7 @@ Configure Azure Log Analytics to consume and aggregate custom application events
 ### Triggered Email Alert:
 ![Validation test](screenshots/10_triggered_email_alert.png)
 
-## Clean it Up
+## Clean Up
 
 * on Az DevOps Pipeline , give approval on the notification to resume with the Destroy Terraform Stage.
 
