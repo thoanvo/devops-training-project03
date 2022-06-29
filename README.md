@@ -7,8 +7,8 @@
 - **[Overview](#Overview)**
 - **[Dependencies](#Dependencies)**
 - **[Azure Resources](#Azure-Resources)**
-- **[Installation & Configuration Step](#Installation-Configuration-Steps)**
-- **[Monitoring & Logging Result](#Monitoring-Logging)**
+- **[Installation Configuration Steps](#Installation-Configuration-Steps)**
+- **[Monitoring And Logging Result](#Monitoring-And-Logging-Result)**
 - **[Clean Up](#Clean-It-Up)**
 
 ## Overview
