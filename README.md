@@ -1,46 +1,45 @@
-# Udacity-DevOps-Azure-Project-3 - Ensuring Quality Releases
 
-Test Automation with Pipeline - Azure DevOps - Terraform - JMeter -Selenium - Postman
-
-* To use  a variety of industry leading tools, especially Microsoft Azure, to create disposable test environments and run a variety of automated tests with the click of a button.
-
-
-## Badges
 [![Build Status](https://dev.azure.com/thoanvo/Ensuring%20Quality%20Releases%20Project/_apis/build/status/thoanvo.devops-training-project03%20(1)?branchName=main)](https://dev.azure.com/thoanvo/Ensuring%20Quality%20Releases%20Project/_build/latest?definitionId=3&branchName=main)
 
-## Intro
+
+# Table of Contents - Ensuring Quality Releases
+
+- **[Overview](#Overview)**
+- **[Dependencies](#Dependencies)**
+- **[AzureResources](#Azure Resources)**
+- **[Steps](#Steps)**
+- **[MonitoringLogging](#Monitoring & Logging)**
+- **[CleanitUp](#Clean it Up)**
+
+## Overview
+
+This project demonstrates how to ensure quality releases using Azure cloud through the implementation of automated testing, performance monitoring and logging using Azure DevOps, Apache JMeter, Selenium, Postman and Terraform.
 
 * To use  a variety of industry leading tools, especially Microsoft Azure, to create disposable test environments and run a variety of automated tests with the click of a button.
 
-![intro](./images/intro.png)
+
+![intro](./screenshots/intro.png)
 
 ## Dependencies
 | Dependency | Link |
 | ------ | ------ |
-| Packer | https://www.packer.io/ |
 | Terraform | https://www.terraform.io/downloads.html |
 | JMeter |  https://jmeter.apache.org/download_jmeter.cgi|
 | Postman | https://www.postman.com/downloads/ |
 | Python | https://www.python.org/downloads/ |
 | Selenium | https://sites.google.com/a/chromium.org/chromedriver/getting-started |
- 
+| Azure DevOps | https://azure.microsoft.com/en-us/services/devops/ |
 
 ## Azure Resources
- - Azure Free account  
+ - Azure account  
  - Azure Storage account (resource)
  - Azure Log Workspace (resource)
  - Terraform Service principle (resource)
- - Azure DevOps Organization ( https://azure.microsoft.com/en-us/services/devops/)
  - Azure CLI (resource)
 
-## Steps
-
-1. Clone this repo:
-
-```sh
-git clone https://github.com/thoanvo/devops-training-project03.git
-```
-
+## Installation & Configuration Steps
+### Terraform in Azure
+1. Clone source repo
 2. Open a Terminal in VS Code and connect to your Azure Account and get the Subscription ID
 
 ```bash
@@ -50,304 +49,237 @@ az account list --output table
 
 3. Configure storage account to Store Terraform state
 
-* Execute the script **commands.sh** :
+  Execute the script **terraform/commands.sh** :
+
+  ```bash
+  ./commands.sh
+  ```
+
+  * Take notes of **storage_account_name**, **container_name**, **access_key** . They are will be used in **main.tf** terrafrom files
+
+  ```bash
+    backend "azurerm" {
+      storage_account_name = "thoanvttstorage01999"
+      container_name       = "thoanvttcontainer01999"
+      key                  = "terraform.tfstate"
+      access_key           = <access_key_value>
+    }
+  ```
+
+![azurerm-backend](./screenshots/azurerm-backend.png)
+
+### Create a Service Principal for Terraform
+1. Create a  Service Principal with **Contributor** role, performing the following steps:
 
 ```bash
-./commands.sh
+az ad sp create-for-rbac --role Contributor --scopes /subscriptions/<your-subscription-id> --query "{ client_id: appId, client_secret: password, tenant_id: tenant }" 
 ```
 
-* Take notes of **storage_account_name**, **container_name**, **access_key** . They are will be used in **main.tf** terrafrom files ( lines 15 to 19)
+  * Take notes of **appId**, **password**, and **tenant** as will be used at **terraform/terraform.tfvars** file 
 
-> storage_account_name: thoanvttstorage01999
-> container_name: thoanvttcontainer01999
-> access_key: s5TZcSCI8SmN4Zs6vqCIPATMtbZlk/Hm6h4oGjwph3Iy0EKcj1XgOwXjyTD5ZEwYdUTP3DVDYG06+AStIppV6g==
 
-```bash
-   backend "azurerm" {
-    storage_account_name = "thoanvttstorage01999"
-    container_name       = "thoanvttcontainer01999"
-    key                  = "terraform.tfstate"
-    access_key           = <access_key_value>
-  }
-```
+2. On your terminal create a SSH key and also perform a keyscan of your github to get the known hosts.
 
-4. Create a  Service Principal with **Contributor** role, performing the following steps:
+  ```bash
+  ssh-keygen -t rsa
+  cat ~/.ssh/id_rsa.pub
+  ```
 
-```bash
-az ad sp create-for-rbac --name="UdacityProject3" --role="Contributor" 
-```
+  ```bash
+  ssh-keyscan github.com
+  ```
+  * Take notes of **appId**, **password**, and **tenant** as will be used at **terraform/terraform.tfvars** file 
 
-> Take notes of **appId**, **password**, and **tenant** as will be used at **terraform.tfvars** file 
-> (lines 2 to 5)
+### Azure DevOps
+1. Login to Azure DevOPs and perform the following settings before to execute the Pipeline. 
 
-5. Create a Resource Group for your VM image using Packer and build the Image ( Ubuntu 18.04)
+2. Install these Extensions :
 
-```bash
-az group create -n RG-myPackerImage -l eastus2
-packer --version
-cd packer
-packer build ubuntu-image.json
-cd..
-pwd
-```
+  * JMeter (https://marketplace.visualstudio.com/items?itemName=AlexandreGattiker.jmeter-tasks&targetId=625be685-7d04-4b91-8e92-0a3f91f6c3ac&utm_source=vstsproduct&utm_medium=ExtHubManageList)
+    
+  * PublishHTMLReports (https://marketplace.visualstudio.com/items?itemName=LakshayKaushik.PublishHTMLReports&targetId=625be685-7d04-4b91-8e92-0a3f91f6c3ac&utm_source=vstsproduct&utm_medium=ExtHubManageList)
 
-> Here you will get an Ubuntu 18.04 VM Image that will be used to create the VM.!!! Take note of the following values since you will need  **terraform.tfvars**
+  * Terraform (https://marketplace.visualstudio.com/items?itemName=ms-devlabs.custom-terraform-tasks&targetId=625be685-7d04-4b91-8e92-0a3f91f6c3ac&utm_source=vstsproduct&utm_medium=ExtHubManageList)
 
-```bash
-==> azure-arm:  -> Image ResourceGroupName   : 'RG-myPackerImage'
-==> azure-arm:  -> Image Name                : 'myPackerImage'
-==> azure-arm:  -> Image ID                  : '/subscriptions/<subscription-id>/resourceGroups/RG-myPackerImage/providers/Microsoft.Compute/images/myPackerImage'
-==> azure-arm:  -> Image Location            : 'eastus2'
-```
+3. Create a Project into your Organization
 
-6. On your terminal create a SSH key and also perform a keyscan of your github to get the known hosts.
+4. Create the Service Connection in Project Settings* Pipelines* Service Connection
 
-```bash
-ssh-keygen -t rsa
-cat ~/.ssh/id_rsa.pub
-```
-
-```bash
-ssh-keyscan github.com
-```
-
-7. From the terminal, change into terraform directory
-
-```bash
-cd
-cd terraform
-```
-
-7.1. Copy the **terraform-example.tfvars** as **terraform.tfvars** and fill the parameters marked as `to fill` as indicated with the values from steps  5, 6 and 7.
-
-```bash
-cp terraform-example.tfvars terraform.tfvars
-nano terraform.tfvars
-```
-
-Complete the following parameters:
-| parameter| Link |
-| ------ | ------ |
-| subscription_id | subscription id |
-| client_id | service principal client app id |
-| client_secret | service principal password |
-| tenant_id | service principal tenandt id |
-| location | location |
-| resource_group | Resource Group |
-| application_type | Name of the APP - must be unique |
-| virtual_network_name | Name of the VNet |
-| packer_image | Packer Image ID  created earlier |
-| admin_username | admin username of the VM |
-| public_key_path | path of the id_rsa.pub file |
-
-7.2. Don't forget also modify the **main.tf** as was pointed on step 3 !!!
-
-```bash
-  backend "azurerm" {
-    storage_account_name = "thoanvttstorage01999"
-    container_name       = "thoanvttcontainer01999"
-    key                  = "terraform.tfstate"
-    access_key           = <access_key_value>
-  }
-```
-
-8. Login to Azure DevOPs and perform the following settings before to execute the Pipeline. 
-
-8.1. Install these Extensions :
-
-* JMeter (https://marketplace.visualstudio.com/items?itemName=AlexandreGattiker.jmeter-tasks&targetId=625be685-7d04-4b91-8e92-0a3f91f6c3ac&utm_source=vstsproduct&utm_medium=ExtHubManageList)
-  
-* PublishHTMLReports (https://marketplace.visualstudio.com/items?itemName=LakshayKaushik.PublishHTMLReports&targetId=625be685-7d04-4b91-8e92-0a3f91f6c3ac&utm_source=vstsproduct&utm_medium=ExtHubManageList)
-
-* Terraform (https://marketplace.visualstudio.com/items?itemName=ms-devlabs.custom-terraform-tasks&targetId=625be685-7d04-4b91-8e92-0a3f91f6c3ac&utm_source=vstsproduct&utm_medium=ExtHubManageList)
-
-8.2 Create a Project into your Organization
-
-8.3. Create the Service Connection  in Project Settings > Pipelines > Service Connection
-
-> be sure that you are verified and authenticated here!!!
-> get the url to have the Service Connection ID:
-(https://dev.azure.com/<organiztion>/<project>/_apis/serviceendpoint/endpoints?api-version=5.0-preview.2)
+  ![service-connection](screenshots/service-connection.png) <br/>
  
-8.4. Add into Pipelines --> Library --> Secure files these 2 files:
+5. Add into Pipelines --> Library --> Secure files these 2 files:
 the private secure file : **id_rsa key**
 the terraform tfvars file : **terraform.tfvars**
 
-![img1](./images/Library-SecureFiles.png)
+  ![library-secure-files](./screenshots/library-secure-files.png)
 
-8.5. Create a Pipeline --> Environment named "VM-TEST" as is the one used in the pipeline.yaml. Copy the Registration script ( in Linux) since it must be executed on the created VM :
+6. Modify the following lines on azure-pipelines.yaml before to update your own repo:
+    * Get your "Known Hosts Entry" is the displayed third value that doesn't begin with # in the GitBash results:<br/>
+      ![img](screenshots/known-hosts-entry.png) <br/>
 
-> Something similar to 
-```bash
-mkdir azagent;cd azagent;curl -fkSL -o vstsagent.tar.gz https://vstsagentpackage.azureedge.net/agent/2.183.1/vsts-agent-linux-x64-2.183.1.tar.gz;tar -zxvf vstsagent.tar.gz; if [ -x "$(command -v systemctl)" ]; then ./config.sh --environment --environmentname "VM-TEST" --acceptteeeula --agent $HOSTNAME .....
-```
+    | Line #  | parameter | description |
+    | ------ | ------ | ------ |
+    | 13| knownHostsEntry |  the knownHost of your ssh-keyscan github |
+    | 14 | sshPublicKey |  your public ssh key |
+    | 66 | azureSubscription | your Pipeline --> Service Connection ID ( step 10.3)  |
 
-> Enter the above script into the linux VM created on terraform by ssh and execute it, to get at the end a result like:
+7. Create groups of variables
+  Create groups of variables that you can share across multiple pipelines. 
+  * Choose "+Variable groups" > Add name groups of variables : ssh-config > Add **knownHostsEntry**,**sshPublicKey**,**StorageAccountName (step 3)** and value this in Variables > Select type to secret > Save <br/>
+  ![screen shot](screenshots/variable-group.png) <br/>  
 
-```bash
-Successfully added the agent
-Testing agent connection.
-....
-   Active: active (running) since Tue 2021-03-09 03:20:16 UTC; 13ms ago
- Main PID: 2330 (runsvc.sh)
-    Tasks: 7 (limit: 4680)
-   CGroup: /system.slice/vsts.agent.javiercaparo574..ci\x2dcd\x2dtest\x2dautomation.service
-           ├─2330 /bin/bash /home/udacity/azagent/runsvc.sh
-           └─2333 ./externals/node10/bin/node ./bin/AgentService.js
-```
-
-9. Modify the following lines on azure-pipelines.yaml before to update your own repo :
-
-| Line #  | parameter | description |
-| ------ | ------ | ------ |
-| 13| knownHostsEntry |  the knownHost of your ssh-keyscan github |
-| 14 | sshPublicKey |  your public ssh key |
-| 66 | azureSubscription | your Pipeline --> Service Connection ID ( step 10.3)  |
-
-> Update your repo to get the new azure-pipelines.yaml file updated
-
-10. Create a New Pipeline in your Azure DevOPs Project
-
+8. Create a New Pipeline in your Azure DevOPs Project
  - Located at GitHub
  - Select your Repository
  - Existing Azure Pipelines YAML file
  - Choosing **azure-pipelines.yaml** file
 
-11. Wait the Pipeline is going to execute on the following Stages:
+      8.1. Tab Pipelines -> Create Pipeline -> Where is your code? Choose Github(Yaml) -> Select Repo -> Configure your pipeline
+      : CHoose "Existing Azure Pipelines yaml file"* Continue* Run <br/>
+        ![img](screenshots/select-existing-yaml-file.png) <br/>
+        ![img](screenshots/run-pipeline.png) <br/>
 
-Build --> FirstWait --> WebApp Deployment --> UI Tests (selenium) -> Integration Tests (postman) --> JMeter -->secondWait 
+      8.2. Apcept permission for Azure Resources Create with terraform <br/>
+        ![img](screenshots/permission-needed.png) <br/>
+        ![img](screenshots/permission-permit.png) <br/>
 
-![img2](./images/pipeline-stages.png)
+      8.3. Pipeline run step like this <br/>
+        ![img](screenshots/p28.png) <br/>
+        ![img](screenshots/p29.png) <br/>
 
-* Explanation of the Stages
+      8.4. When step deploy virtual machine(VM) if you can see error : "no resource found ...". you must Registration VM on environment Pipeline and you only need to run it once <br/>
 
-> Provisioning IaC : using Terraform , perform the provisioning of the IaC (RG, VNet, subnet, public IP, App Service, VM Linux).
+      8.5. Go to Azure pipeline -> Environments -> you can see Environments name is "TEST" -> Choose and select "Add resource" -> choose "Virtual machines"* Select "Linux" and Choose icon "Copy command ..."* Close
+      Something similar to 
+        ![img1](./screenshots/devops-add-resource.png) </br>
+        ![img2](./screenshots/devops-add-resource-script.png)
 
-> Build: Build FakeRestAPI artifact by archiving the entire fakerestapi directory into a zip file and publishing the pipeline artifact to the artifact staging directory , same for Selenium py file.
+      8.6. SSH into the VM created using the Public IP -> Enter command you just copy above step -> Run it -> Success if you see result like this 
+        ![img3](./screenshots/excute-script-in-vm.png)
 
-> Wait: just wait 1minute in case you still did not run the Environment Agent registration script on the created VM ( so still have time to do it)
+      Get at the end a result like:
 
-> Deployments : Deploy FakeRestAPI artifact to the Azure App Service ( created on IaC). The deployed webapp URL is https://jc-test2-appservice.azurewebsites.net where `jc-test2-appservice` is the Azure App Service resource name in small letters. And also deploy Selenium and Chromium to the VM created in IaC
+       ![img4](./screenshots/result-add-resource-vm.png)
 
-> Integration Tests: Postman Regression and Data Validation tests (using newman/postman) to the APP api created above and publishing the results.
+      8.7. Back to pipeline and re-run
 
-> JMeter TEsts:  JMeter Tests - Endurance & Stress Tests to the APP created above, and publish the results
 
-> UI Tests : Execution of the Selenium Tests an publish its results using the VM-TEST environment.
+9. Wait the Pipeline is going to execute on the following Stages:
 
-> WaitforApproval: Manual Intervention to approve the Pipeline and resume it ( 2 hours as maximum)
+  Azure Resources Create --> Build --> Deploy App --> Test
 
-> DestroyIaC: Destroy the IaC using terraform destroy. Clean up the resources.
+  ![img2](./screenshots/pipeline-stages.png)
 
-12. Create a Log Analytics workspace using this script for simplicity. It will be created on the same RG used by terraform (so if put another name, change the RG in the script!!)
+  * Explanation of the Stages
 
-```bash
-./deploy_log_analytics_workspace.sh
-```
-> Go the `WORKSPACE ID` & `WORKSPACE PRIMARY KEY`
+ * Azure Resources Create : using Terraform , perform the provisioning of the IaC (RG, VNet, subnet, public IP, App Service, VM Linux).
 
-* Enter to the VM by ssh and install the OSMAgent.
+ * Build: Build FakeRestAPI artifact by archiving the entire fakerestapi directory into a zip file and publishing the pipeline artifact to the artifact staging directory, same for Selenium py file.
 
-```bash
-wget https://raw.githubusercontent.com/Microsoft/OMS-Agent-for-Linux/master/installer/scripts/onboard_agent.sh && sh onboard_agent.sh -w <YOUR WORKSPACE ID> -s <YOUR WORKSPACE PRIMARY KEY>
-sudo /opt/microsoft/omsagent/bin/service_control restart <YOUR WORKSPACE ID>
-```
+ * Deploy App : Deploy FakeRestAPI artifact to the Azure App Service (created on IaC). The deployed webapp URL is https://udacity-thoanvtt-project03-app-appservice.azurewebsites.net. And also deploy Selenium and Chromium to the VM created in IaC
 
-13. Set up email alerts in the App Service:
+ * Test: Execution of the Selenium Tests an publish its results using the VM-TEST environment. Postman Regression and Data Validation tests (using newman/postman) to the APP api created above and publishing the results. JMeter TEsts:  JMeter Tests - Endurance & Stress Tests to the APP created above, and publish the results. UI Tests : Execution of the Selenium Tests an publish its results using the VM-TEST environment.
 
-* In the azure portal go to the app service > Alerts > New Alert Rule. Add an HTTP 404 condition and add a threshold value of 1. This will create an alert if there are two or more consecutive 404 alerts. Click Done. Then create an action group with notification type Email/SMS message/Push/Voice and choose the email option. Set the alert rule name and severity. Wait ten minutes for the alert to take effect. If you then visit the URL of the app service and try to go to a non-existent page more than once it should trigger the email alert.
+### Configure Logging for the VM in the Azure Portal.
+1. Create a Log Analytics workspace using this script for simplicity. It will be created on the same RG used by terraform (so if put another name, change the RG in the script!!)
 
-* Go to the `App service > Diagnostic Settings > + Add Diagnostic Setting`. Tick `AppServiceHTTPLogs` and Send to Log Analytics Workspace created on step above and  `Save`. 
+  ![img2](./screenshots/pipeline-stages.png)
 
-* Go back to the `App service > App Service Logs `. Turn on `Detailed Error Messages` and `Failed Request Tracing` > `Save`. **Restart the app service**.
+2. Set up email alerts in the App Service:
+ 
+ * Log into Azure portal and go to the AppService that you have created.
+ * On the left-hand side, under Monitoring, click Alerts, then New Alert Rule.
+ * Verify the resource is correct, then, click “Add a Condition” and choose Http 404
+ * Then, set the Threshold value of 1. Then click Done
+ * After that, create an action group and name it myActionGroup, short name mag.
+ * Then, add “Send Email” for the Action Name, and choose Email/SMS/Push/Voice for the action type, and enter your email. Click OK
+ * Name the alert rule Http 404 errors are greater than 1, and leave the severity at 3, then click “Create”
+  Wait ten minutes for the alert to take effect. If you then visit the URL of the app service and try to go to a non-existent page more than once it should trigger the email alert.
 
-14. Set up log analytics workspace properly to get logs:
+3. Log Analytics
+  * Go to the `App service* Diagnostic Settings* + Add Diagnostic Setting`. Tick `AppServiceHTTPLogs` and Send to Log Analytics Workspace created on step above and  `Save`. 
 
-* Go to Virtual Machines and Connect the VM created on Terraform to the Workspace ( Connect). Just wait that shows `Connected`.
+  * Go back to the `App service* App Service Logs `. Turn on `Detailed Error Messages` and `Failed Request Tracing`* `Save`. 
+  * Restart the app service.
 
-* Set up custom logging , in the log analytics workspace go to Advanced Settings > Data > Custom Logs > Add + > Choose File. Select the file selenium.log > Next > Next. Put in the following paths as type Linux:
+4. Set up log analytics workspace properly to get logs:
 
-/var/log/selenium/selenium.log
+  * Go to Virtual Machines and Connect the VM created on Terraform to the Workspace ( Connect). Just wait that shows `Connected`.
 
-Give it a name ( `selenium_logs_CL`) and click Done. Tick the box Apply below configuration to my linux machines.
+  * Set up custom logging , in the log analytics workspace go to Advanced Settings* Data* Custom Logs* Add +* Choose File. Select the file selenium.log* Next* Next. Put in the following paths as type Linux:
 
-* Go to the App Service web page and navigate on the links and also generate 404 not found , example:
+  /var/log/selenium/selenium.log
 
-```html
-https://jc-test2-appservice.azurewebsites.net
+  Give it a name ( `selenium_logs_CL`) and click Done. Tick the box Apply below configuration to my linux machines.
 
-https://jc-test2-appservice.azurewebsites.net/feeeee  ( click this many times so alert will be raised too)
-```
+  * Go to the App Service web page and navigate on the links and also generate 404 not found , example:
 
-Go to Log Analytics Workspace , to run the  following queries:
+  ```html
+  https://udacity-thoanvtt-project03-app-appservice.azurewebsites.net
 
-```kusto
-Operation
-| where TimeGenerated > ago(2h)
-| summarize count() by TimeGenerated, OperationStatus, Detail
-```
+  https://udacity-thoanvtt-project03-app-appservice.azurewebsites.net/gggg  ( click this many times so alert will be raised too)
+  ```
 
-```kusto
-AppServiceHTTPLogs
-| where TimeGenerated < ago(2h)
-  and ScStatus == '404'
-```
+  Go to Log Analytics Workspace , to run the  following queries:
 
-```kusto
-SELENIUM_LOGS_CL
-```
+  ```kusto
+  Operation
+  | where TimeGenerated* ago(2h)
+  | summarize count() by TimeGenerated, OperationStatus, Detail
+  ```
 
-* After some minutes ( 3 to 10 minutes) , check the email configured since an alert message will be received. and also check the Log Analytics Logs , so you can get visualize the logs and analyze with more detail.
+  ```kusto
+  AppServiceHTTPLogs
+  | where TimeGenerated < ago(2h)
+    and ScStatus == '404'
+  ```
 
-![img4](./images/AppService-AlerRule-EmailgetbyUser-Alerting404.png)
+  ```kusto
+  SELENIUM_LOGS_CL
+  ```
+
+  * After some minutes ( 3 to 10 minutes) , check the email configured since an alert message will be received. and also check the Log Analytics Logs , so you can get visualize the logs and analyze with more detail.
+
+  ![img4](./screenshots/AppService-AlerRule-EmailgetbyUser-Alerting404.png)
+
+
+## Monitoring & Logging
+Configure Azure Log Analytics to consume and aggregate custom application events in order to discover root causes of operational faults, and subsequently address them.
+
+### Terraform:
+![Terraform](screenshots/terraform_output_in_pipeline.png)
+
+### FakeRestAPI
+![FakeRestAPI](screenshots/2_deployed_fakerestapi.png)
+
+### Pipeline Build:
+![Pipeline build](screenshots/3_successful_execution_of_pipeline.png)
+
+### JMeter Endurance Test:                                                                       
+![Endurance test](screenshots/4_jmeter_endurance_test.png)
+
+### JMeter Stress Test:
+![Stress test](screenshots/5_jmeter_stress_test.png)
+
+### Selenium:
+![Selenium test](screenshots/6_selenium_tests.png)
+
+### Regression Tests:
+![Regression test](screenshots/7_regression_tests.png)
+
+### Validation Tests:
+![Validation test](screenshots/8_validation_tests.png)
+
+### Logs from Azure Log Analytics:
+![Validation test](screenshots/9_azure_log_analytics_logs.png)
+
+### Triggered Email Alert:
+![Validation test](screenshots/10_triggered_email_alert.png)
 
 ## Clean it Up
 
 * on Az DevOps Pipeline , give approval on the notification to resume with the Destroy Terraform Stage.
 
-* and finally run this script to delete the `PackerImage` and `tstate StorageAccount` Resources groups.
+* and finally run this script to delete the `PackerImage` and `StorageAccount` Resources groups.
 
-```bash
-./clean-up-rgs.sh
-```
-
-### Useful Links
-
-> Collect custom logs with Log Analytics agent in Azure Monitor (
-https://docs.microsoft.com/en-us/azure/azure-monitor/agents/data-sources-custom-logs)
-
-> Collect data from an Azure virtual machine with Azure Monitor (https://docs.microsoft.com/en-us/azure/azure-monitor/vm/quick-collect-azurevm)
-
-> Environment - virtual machine resource (https://docs.microsoft.com/en-us/azure/devops/pipelines/process/environments-virtual-machines?view=azure-devops)
-
-> Build GitHub repositories (https://docs.microsoft.com/en-us/azure/devops/pipelines/repos/github?view=azure-devops&tabs=yaml)
-
-> Tutorial: Store Terraform state in Azure Storage (https://docs.microsoft.com/en-us/azure/developer/terraform/store-state-in-azure-storage)
-
-> Create your first pipeline (https://docs.microsoft.com/en-us/azure/devops/pipelines/create-first-pipeline?view=azure-devops&tabs=azure-cli%2Ctfs-2018-2%2Cbrowser)
-
-> Create a project in Azure DevOps (https://docs.microsoft.com/en-us/azure/devops/organizations/projects/create-project?view=azure-devops&tabs=preview-page)
-
-> Create a Linux VM with infrastructure in Azure using Terraform (https://docs.microsoft.com/en-us/azure/developer/terraform/create-linux-virtual-machine-with-infrastructure)
-
-> Create a Log Analytics workspace with Azure CLI 2.0 (https://docs.microsoft.com/en-us/azure/azure-monitor/logs/quick-create-workspace-cli)
-
-> Hashicorp Terraform with Azure (https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet)
-
-> azure-pipelines-jmeter-extension (https://marketplace.visualstudio.com/items?itemName=AlexandreGattiker.jmeter-tasks&ssr=false#qna)
-(https://github.com/algattik/azure-pipelines-jmeter-extension/issues?utm_source=vsmp&utm_medium=ms%20web&utm_campaign=mpdetails)
-
-> How to troubleshoot issues with the Log Analytics agent for Linux (https://docs.microsoft.com/en-us/azure/azure-monitor/agents/agent-linux-troubleshoot)
-
-## Future Improvements
-
-* Use VMSS in Terraform
-
-## License
-
----
-
-MIT
-
-**Free Software, Hell Yeah!**
 

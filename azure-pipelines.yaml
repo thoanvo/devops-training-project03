@@ -141,20 +141,16 @@ stages:
               inputs:
                 targetType: 'inline'
                 script: |
-                  #!/bin/bash
-                  sudo apt-get update -y
+                  #! /bin/bash
                   sudo apt-get upgrade -y
+                  sudo apt-get update -y
                   sudo apt-get install python3-pip -y
                   sudo apt-get install unzip -y
                   sudo apt-get install -y chromium-browser
-                  sudo apt-get install -y chromium-chromedriver
-                  sudo python3 -m pip install --upgrade pip
-                  sudo pip3 install selenium
-                  python3 -V
-                  pip3 -V
-                  export PATH=$PATH:/usr/local/bin
-                  chromium-browser -version
-                  chromedriver --version
+                  sudo apt-get install -y chromium-driver
+                  pip install --upgrade pip
+                  pip3 install selenium
+                  export PATH=$PATH:/usr/bin/chromedriver
                   # agent log analytics
               env:  # To use secret variables in a script, we must explicitly map them as environment variables.
                 AZURE_LOG_ANALYTICS_ID: $(AZURE_LOG_ANALYTICS_ID)
