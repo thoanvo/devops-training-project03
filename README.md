@@ -7,8 +7,8 @@
 - **[Overview](#Overview)**
 - **[Dependencies](#Dependencies)**
 - **[Azure Resources](#Azure-Resources)**
-- **[Steps](#Steps)**
-- **[Monitoring and Logging](#Monitoring-Logging)**
+- **[Installation & Configuration Step](#Installation-Configuration-Steps)**
+- **[Monitoring & Logging Result](#Monitoring-Logging)**
 - **[Clean Up](#Clean-It-Up)**
 
 ## Overview
@@ -148,6 +148,8 @@ az ad sp create-for-rbac --role Contributor --scopes /subscriptions/<your-subscr
 
     8.3. When step deploy virtual machine(VM) if you can see error : "No resource found ...". you must Registration VM on environment Pipeline and you only need to run it once (from 8.4 to 8.6) <br/>
 
+      ![img](screenshots/devops-error-no-resource.png) <br/>
+
     8.4. Go to Azure pipeline -> Environments -> you can see Environments name is "TEST" -> Choose and select "Add resource" -> choose "Virtual machines" > Select "Linux" and Choose icon "Copy command ..." > Close <br>
     Something similar to </br>
       ![img1](screenshots/devops-add-resource.png) </br>
@@ -171,7 +173,7 @@ az ad sp create-for-rbac --role Contributor --scopes /subscriptions/<your-subscr
 
     ![img](./screenshots/automation-test-result.png)
 
-### Configure Logging for the VM in the Azure Portal.
+### Configure Logging for the VM in the Azure Portal
 1. Create a Log Analytics workspace. It will be created on the same RG used by terraform
 
     ![img](./screenshots/log-analytics-workspace.png)
@@ -264,10 +266,7 @@ Configure Azure Log Analytics to consume and aggregate custom application events
   #### JMeter Stress Test
   ![Stress test](screenshots/publish-stress-test-results.png)
 
-  #### HTML report:
-  ![HTML report](screenshots/html-report-results.png)
-
-  #### Selenium:
+  #### Selenium
   ![Selenium test](screenshots/selenium-logging.png)
 
   ![Selenium test](screenshots/selenium-logging.png)
@@ -286,22 +285,14 @@ Configure Azure Log Analytics to consume and aggregate custom application events
 
   ![Validation test](screenshots/junit-validation-test-result.png)
 
-  #### Run Summary page
-  ![Validation test](screenshots/test-run-validation-postman.png)
-
-  #### Publish Test Results step
-
-  #### Test Results page
-
-  #### The artifact is downloaded from the Azure DevOps and available under the project-submission-artifacts folder.
+  #### The artifact is downloaded from the Azure DevOps and available under the /projectartifactsrequirements folder.
 
 
 
 ### Monitoring & Observability
-![Validation test](screenshots/9_azure_log_analytics_logs.png)
 
   #### Alert Rule:
-  ![Alert Rule](screenshots/404-alert-rule.pngg)
+  ![Alert Rule](screenshots/404-alert-rule.png)
 
   ![The Triggered Alert](screenshots/the-alert-triggered.png)
 
@@ -312,9 +303,6 @@ Configure Azure Log Analytics to consume and aggregate custom application events
   ![The Graphs 404 Alert](screenshots/azure-alert-rule.png)
 
   #### Logs from Azure Log Analytics
-  
-  ![Alert Rule](screenshots/404-alert-rule.png)
-
     
     Go to Log Analytics Workspace , to run the  following queries:
 
