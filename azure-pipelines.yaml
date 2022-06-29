@@ -151,7 +151,7 @@ stages:
                   pip install --upgrade pip
                   sudo pip3 install selenium
                   echo "python version : "
-                  python -version 
+                  python --version 
                   export PATH=$PATH:/usr/bin/chromedriver
                   # agent log analytics
               env:  # To use secret variables in a script, we must explicitly map them as environment variables.
