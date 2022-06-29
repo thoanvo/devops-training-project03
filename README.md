@@ -130,39 +130,39 @@ az ad sp create-for-rbac --role Contributor --scopes /subscriptions/<your-subscr
   ![screen shot](screenshots/variable-group.png) <br/>  
 
 8. Create a New Pipeline in your Azure DevOPs Project
- - Located at GitHub
- - Select your Repository
- - Existing Azure Pipelines YAML file
- - Choosing **azure-pipelines.yaml** file
+  - Located at GitHub
+  - Select your Repository
+  - Existing Azure Pipelines YAML file
+  - Choosing **azure-pipelines.yaml** file
 
-      8.1. Tab Pipelines -> Create Pipeline -> Where is your code? Choose Github (Yaml) -> Select Repo -> Configure your pipeline
-      : Choose "Existing Azure Pipelines yaml file" > Continue > Run <br/>
-        ![img](screenshots/select-existing-yaml-file.png) <br/>
+    8.1. Tab Pipelines -> Create Pipeline -> Where is your code? Choose Github (Yaml) -> Select Repo -> Configure your pipeline
+    : Choose "Existing Azure Pipelines yaml file" > Continue > Run <br/>
+      ![img](screenshots/select-existing-yaml-file.png) <br/>
 
-        ![img](screenshots/run-pipeline.png) <br/>
+      ![img](screenshots/run-pipeline.png) <br/>
 
-      8.2. Apcept permission for Azure Resources Create with terraform <br/>
-        ![img](screenshots/permission-needed.png) <br/>
+    8.2. Apcept permission for Azure Resources Create with terraform <br/>
+      ![img](screenshots/permission-needed.png) <br/>
 
-        ![img](screenshots/permission-permit.png) <br/>
+      ![img](screenshots/permission-permit.png) <br/>
 
-      8.3. When step deploy virtual machine(VM) if you can see error : "No resource found ...". you must Registration VM on environment Pipeline and you only need to run it once <br/>
+    8.3. When step deploy virtual machine(VM) if you can see error : "No resource found ...". you must Registration VM on environment Pipeline and you only need to run it once (from 8.4 to 8.6) <br/>
 
-      8.4. Go to Azure pipeline -> Environments -> you can see Environments name is "TEST" -> Choose and select "Add resource" -> choose "Virtual machines" > Select "Linux" and Choose icon "Copy command ..." > Close <br>
-      Something similar to </br>
-        ![img1](screenshots/devops-add-resource.png) </br>
-        ![img2](screenshots/devops-add-resource-script.png)
+    8.4. Go to Azure pipeline -> Environments -> you can see Environments name is "TEST" -> Choose and select "Add resource" -> choose "Virtual machines" > Select "Linux" and Choose icon "Copy command ..." > Close <br>
+    Something similar to </br>
+      ![img1](screenshots/devops-add-resource.png) </br>
+      ![img2](screenshots/devops-add-resource-script.png)
 
-      8.5. SSH into the VM created using the Public IP -> Enter command you just copy above step -> Run it -> Success if you see result like this 
-      ![img3](screenshots/devops-excute-add-resource-script.png) <br>
-        
-      ![img4](screenshots/excute-script-in-vm.png)
+    8.5. SSH into the VM created using the Public IP -> Enter command you just copy above step -> Run it -> Success if you see result like this 
+    ![img3](screenshots/devops-excute-add-resource-script.png) <br>
+      
+    ![img4](screenshots/excute-script-in-vm.png)
 
-      Get at the end a result like:
+    Get at the end a result like:
 
-      ![img5](screenshots/devops-result-add-resource-vm.png)
+    ![img5](screenshots/devops-result-add-resource-vm.png)
 
-      8.6. Back to pipeline and re-run
+    8.6. Back to pipeline and re-run
 
 
 9. Wait the Pipeline is going to execute on the following Stages:
@@ -188,9 +188,9 @@ az ad sp create-for-rbac --role Contributor --scopes /subscriptions/<your-subscr
   Wait ten minutes for the alert to take effect. If you then visit the URL of the app service and try to go to a non-existent page more than once it should trigger the email alert.
 
 3. Log Analytics
-  * Go to the `App service* Diagnostic Settings* + Add Diagnostic Setting`. Tick `AppServiceHTTPLogs` and Send to Log Analytics Workspace created on step above and  `Save`. 
+  * Go to the `App service* Diagnostic Settings > + Add Diagnostic Setting`. Tick `AppServiceHTTPLogs` and Send to Log Analytics Workspace created on step above and  `Save`. 
 
-  * Go back to the `App service* App Service Logs `. Turn on `Detailed Error Messages` and `Failed Request Tracing`* `Save`. 
+  * Go back to the `App service > App Service Logs `. Turn on `Detailed Error Messages` and `Failed Request Tracing` > `Save`. 
   * Restart the app service.
 
 4. Set up log analytics workspace properly to get logs:
@@ -277,7 +277,7 @@ Configure Azure Log Analytics to consume and aggregate custom application events
   #### JMeter Endurance Test                                                                      
   ![Endurance test](screenshots/publish-endurance-test-results.png)
 
-  #### JMeter Stress Test:
+  #### JMeter Stress Test
   ![Stress test](screenshots/publish-stress-test-results.png)
 
   #### HTML report:
@@ -291,14 +291,14 @@ Configure Azure Log Analytics to consume and aggregate custom application events
 
   ![Regression test](screenshots/junit-regression-test.png)
 
-  ![Regression test](screenshots/junit-regression-test-1.png)
+  ![Regression test](screenshots/junit-regression-test-2.png)
 
   #### Validation Tests
   ![Validation test](screenshots/test-run-validation-postman.png)
 
   ![Validation test](screenshots/junit-validation-test.png)
 
-  ![Validation test](screenshots/junit-validation-test-1.png)
+  ![Validation test](screenshots/junit-validation-test-2.png)
 
   #### Run Summary page
   ![Validation test](screenshots/test-run-validation-postman.png)
