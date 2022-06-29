@@ -211,24 +211,6 @@ az ad sp create-for-rbac --role Contributor --scopes /subscriptions/<your-subscr
     https://udacity-thoanvtt-project03-app-appservice.azurewebsites.net/gggg  ( click this many times so alert will be raised too)
     ```
 
-    Go to Log Analytics Workspace , to run the  following queries:
-
-    ```kusto
-    Operation
-    | where TimeGenerated* ago(2h)
-    | summarize count() by TimeGenerated, OperationStatus, Detail
-    ```
-
-    ```kusto
-    AppServiceHTTPLogs
-    | where TimeGenerated < ago(2h)
-      and ScStatus == '404'
-    ```
-
-    ```kusto
-    SELENIUM_LOGS_CL
-    ```
-
   * After some minutes ( 3 to 10 minutes) , check the email configured since an alert message will be received. and also check the Log Analytics Logs , so you can get visualize the logs and analyze with more detail.
 
   ![img](screenshots/azure-monitor-alert-triggered.png)
@@ -272,7 +254,9 @@ Configure Azure Log Analytics to consume and aggregate custom application events
   ![FakeRestAPI](screenshots/fakerestapi.png)
 
   #### JMeter log output
-  ![JMeterLogOutput](screenshots/jmeter-log-output.png)
+  ![JMeterLogOutput](screenshots/jmeter-log-output-stress-test.png)
+
+  ![JMeterLogOutput](screenshots/jmeter-log-output-endurance-test.png)
 
   #### JMeter Endurance Test                                                                      
   ![Endurance test](screenshots/publish-endurance-test-results.png)
@@ -284,21 +268,23 @@ Configure Azure Log Analytics to consume and aggregate custom application events
   ![HTML report](screenshots/html-report-results.png)
 
   #### Selenium:
-  ![Selenium test](screenshots/6_selenium_tests.png)
+  ![Selenium test](screenshots/selenium-logging.png)
+
+  ![Selenium test](screenshots/selenium-logging.png)
 
   #### Regression Tests
   ![Regression test](screenshots/test-run-regression-postman.png)
 
-  ![Regression test](screenshots/junit-regression-test.png)
+  ![Regression test](screenshots/junit-regression-test-summary.png)
 
-  ![Regression test](screenshots/junit-regression-test-2.png)
+  ![Regression test](screenshots/junit-regression-test-result.png)
 
   #### Validation Tests
   ![Validation test](screenshots/test-run-validation-postman.png)
 
-  ![Validation test](screenshots/junit-validation-test.png)
+  ![Validation test](screenshots/junit-validation-test-summary.png)
 
-  ![Validation test](screenshots/junit-validation-test-2.png)
+  ![Validation test](screenshots/junit-validation-test-result.png)
 
   #### Run Summary page
   ![Validation test](screenshots/test-run-validation-postman.png)
@@ -311,16 +297,38 @@ Configure Azure Log Analytics to consume and aggregate custom application events
 
 
 
-### Logs from Azure Log Analytics:
+### Monitoring & Observability
 ![Validation test](screenshots/9_azure_log_analytics_logs.png)
 
-### Triggered Email Alert:
-![Validation test](screenshots/10_triggered_email_alert.png)
+  #### Alert Rule:
+  ![Alert Rule](screenshots/404-alert-rule.pngg)
 
+  ![The Triggered Alert](screenshots/the-alert-triggered.png)
+
+
+  #### Triggered Alert:
+  ![Triggered Email Alert](screenshots/azure-monitor-alert-triggered.png)
+
+  ![The Graphs 404 Alert](screenshots/azure-alert-rule.png)
+
+  #### Logs from Azure Log Analytics
+  
+  ![Alert Rule](screenshots/404-alert-rule.png)
+
+    
+    Go to Log Analytics Workspace , to run the  following queries:
+
+    ```kusto
+    AppServiceHTTPLogs
+    | where TimeGenerated < ago(2h)
+      and ScStatus == '404'
+    ```
+
+  ![Log Analytics](screenshots/app-service-http-logs.png)
+    
 ## Clean Up
 
-* on Az DevOps Pipeline , give approval on the notification to resume with the Destroy Terraform Stage.
+* On Az DevOps Pipeline , give approval on the notification to resume with the Destroy Terraform Stage.
 
-* and finally run this script to delete the `PackerImage` and `StorageAccount` Resources groups.
 
 
