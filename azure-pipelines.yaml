@@ -114,7 +114,7 @@ stages:
     - deployment: FakeRestAPI
       pool:
         vmImage: 'Ubuntu-18.04'
-      environment: 'TEST'
+      environment: 'VM-TEST'
       strategy:
         runOnce:
           deploy:
@@ -131,7 +131,7 @@ stages:
     - deployment: VMDeploy
       displayName: VMDeploy
       environment:
-        name:  'TEST'
+        name:  'VM-TEST'
         resourceType: VirtualMachine
       strategy:
         runOnce:
@@ -163,7 +163,7 @@ stages:
       - deployment: test_on_vm
         displayName: UI testing
         environment:
-         name: 'TEST'
+         name: 'VM-TEST'
          resourceType: VirtualMachine
         strategy:
           runOnce:
