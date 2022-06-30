@@ -235,19 +235,11 @@ Configure Azure Log Analytics to consume and aggregate custom application events
   ![Terraform](screenshots/terraform-plan-in-pipeline-1.png) <br>
 
   ![Terraform](screenshots/terraform-plan-in-pipeline-2.png) <br>
-  
-  ![Terraform](screenshots/terraform-plan-in-pipeline-3.png) <br>
-  
-  ![Terraform](screenshots/terraform-plan-in-pipeline-4.png) <br>
 
   #### Terraform Apply
   ![Terraform](screenshots/terraform-apply-in-pipeline-1.png) <br>
 
   ![Terraform](screenshots/terraform-apply-in-pipeline-2.png) <br>
-
-  ![Terraform](screenshots/terraform-apply-in-pipeline-3.png) <br>
-
-  ![Terraform](screenshots/terraform-apply-in-pipeline-4.png) <br>
 ### Automated Testing
 
   #### FakeRestAPI
