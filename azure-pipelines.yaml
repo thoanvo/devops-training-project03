@@ -1,4 +1,5 @@
-name: Azure Pipelines
+name: $(TeamProject)_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
+
 variables:
   - group: ssh-config
 stages:
